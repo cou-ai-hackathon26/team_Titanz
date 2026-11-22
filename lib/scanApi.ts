@@ -1,5 +1,5 @@
 // Sends the plate photo to our scan API (api/api/scan.ts) and returns the foods it found.
-// The app never holds the AI key: it only knows the API address (Settings, or EXPO_PUBLIC_SCAN_URL).
+// The app never holds the AI key: it only knows the API address (Settings, EXPO_PUBLIC_SCAN_URL, or our Vercel server).
 import { loadSettings } from './storage';
 
 export type ScanResult = {
@@ -12,9 +12,18 @@ export const LOW_CONFIDENCE = 0.6; // below this, the app asks the user to check
 const TIMEOUT_MS = 90_000; // the server may retry a busy AI and then try backup keys (see api/providers/gemini.ts)
 
 // The scan server address: the one saved in Settings, otherwise the one built into the app.
+// Our live scan server on Vercel (the address is public; the AI key stays inside Vercel).
+export const DEFAULT_SCAN_URL = 'https://roza-safe-api.vercel.app/api/scan';
+
+// The built-in address: EXPO_PUBLIC_SCAN_URL for local tests, otherwise our Vercel server.
+export function builtInScanUrl(): string {
+  return process.env.EXPO_PUBLIC_SCAN_URL || DEFAULT_SCAN_URL;
+}
+
+// Which scan server to use: the one saved in Settings, else the built-in one.
 export async function scanUrl(): Promise<string> {
   const saved = (await loadSettings()).scanUrl.trim();
-  return saved || process.env.EXPO_PUBLIC_SCAN_URL || '';
+  return saved || builtInScanUrl();
 }
 
 // Checks that a scan server answers (sends an empty request: a working server replies "Missing photo").

@@ -16,7 +16,7 @@ import {
 } from '../lib/storage';
 import { findDistrict } from '../lib/places';
 import { isValidPhone, formatPhone, cleanPhoneInput } from '../lib/phone';
-import { scanUrl, testScanServer } from '../lib/scanApi';
+import { scanUrl, testScanServer, builtInScanUrl } from '../lib/scanApi';
 import { backupText } from '../lib/backup';
 import { toBanglaDigits } from '../lib/bangla';
 import { colors, fonts, radius } from '../theme/tokens';
@@ -67,7 +67,7 @@ export default function SettingsScreen() {
 
   // Checks whether the scan server answers, then saves the address if it works.
   async function testAndSaveServer() {
-    const url = server.trim() || process.env.EXPO_PUBLIC_SCAN_URL || '';
+    const url = server.trim() || builtInScanUrl();
     if (!url) {
       setServerMsg({ text: 'কোনো ঠিকানা নেই। স্ক্যান সার্ভারের ঠিকানা লিখুন।', ok: false });
       return;
@@ -179,7 +179,7 @@ export default function SettingsScreen() {
               setServer(t.trim());
               setServerMsg(null);
             }}
-            placeholder={process.env.EXPO_PUBLIC_SCAN_URL || 'https://…/api/scan'}
+            placeholder={builtInScanUrl()}
             keyboardType="url"
           />
           <Text style={styles.small} numberOfLines={2}>
