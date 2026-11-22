@@ -85,7 +85,10 @@ Response:
 2. Copy `api/.env.example` to `api/.env.local` and paste the key there.
 3. `cd api && npm run dev` (API on port 3001).
 4. Root `.env.local`: `EXPO_PUBLIC_SCAN_URL=http://<laptop Wi-Fi IP>:3001/api/scan` (phone and laptop on the same Wi-Fi), then restart `npx expo start`.
-5. Deploy later: `cd api && npx vercel`, add `GEMINI_API_KEY` in Vercel → Settings → Environment Variables, and point `EXPO_PUBLIC_SCAN_URL` at `https://<project>.vercel.app/api/scan`.
+5. Live server (deployed 22 Nov): **https://roza-safe-api.vercel.app/api/scan** — Vercel project `roza-safe-api`. The app uses it by default (`lib/scanApi.ts` → `DEFAULT_SCAN_URL`); a local `EXPO_PUBLIC_SCAN_URL` or the Settings box overrides it.
+   - Open the address in a browser: `aiKeySet: true` means the key is in Vercel.
+   - Redeploy after code or key changes: `cd api && npx vercel deploy --prod`.
+   - Add a key: `cd api && npx vercel env add GEMINI_API_KEY_2 production` (choose Secret, paste the key), then redeploy.
 
 ## Setup checklist
 1. Node LTS, `npm i -g eas-cli vercel`
