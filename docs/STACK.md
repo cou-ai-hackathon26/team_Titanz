@@ -76,6 +76,7 @@ Response:
 
 ## Env vars
 - API (Vercel env vars, or `api/.env.local` for local tests): `GEMINI_API_KEY`; optional `SCAN_MODEL`, `SCAN_PROVIDER=claude` + `ANTHROPIC_API_KEY`. See `api/.env.example`.
+- Free key ran out? Add backup keys `GEMINI_API_KEY_2` … `GEMINI_API_KEY_5` (other Google accounts). The server tries them in turn on 429/bad key, then Claude if `ANTHROPIC_API_KEY` is set. Keys never go in the app: the app's Settings only stores the scan server address (with a Test button).
 - App (`.env.local` in the root): `EXPO_PUBLIC_SCAN_URL` = the API address. See `.env.example`.
 - Both `.env.local` files are git-ignored. Never commit a key.
 

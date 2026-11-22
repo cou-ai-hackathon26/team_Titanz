@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
+import { goBack } from '../lib/nav';
 import SetupLayout from '../components/SetupLayout';
 import Input from '../components/Input';
 import ChoiceGroup from '../components/ChoiceGroup';
@@ -9,7 +10,10 @@ import { onlyDigits, toBanglaDigits } from '../lib/bangla';
 
 // Screen 00g · About you (setup step 1 of 2): name, age, gender, diabetes type, treatment.
 // Saved only on the phone. These answers are used later by the risk check.
+// Opened from Settings with ?edit=1: saving goes back to Settings instead of the next setup step.
 export default function AboutYouScreen() {
+  const { edit } = useLocalSearchParams<{ edit?: string }>();
+  const editing = edit === '1';
   const [name, setName] = useState('');
   const [ageDigits, setAgeDigits] = useState(''); // English digits, e.g. "58"
   const [gender, setGender] = useState<Profile['gender']>(null);
@@ -34,17 +38,20 @@ export default function AboutYouScreen() {
   // Save the answers and go to step 2.
   async function next() {
     await saveProfile({ name: name.trim(), age, gender, diabetesType, treatment });
-    router.push('/iftar');
+    if (editing) goBack('/settings');
+    else router.push('/iftar');
   }
 
   return (
     <SetupLayout
-      backTo="/guide/3"
+      backTo={editing ? '/settings' : '/guide/3'}
       step={1}
       totalSteps={2}
       title="আপনার সম্পর্কে বলুন"
       subtitle="এতে আপনার ঝুঁকি ঠিকভাবে বোঝা যাবে"
-      bottom={<Button label="পরবর্তী" sub="Next" onPress={next} disabled={!canContinue} />}
+      bottom={
+        <Button label={editing ? 'সেভ করুন' : 'পরবর্তী'} sub={editing ? 'Save' : 'Next'} onPress={next} disabled={!canContinue} />
+      }
     >
       <Input label="আপনার নাম" value={name} onChangeText={setName} placeholder="যেমন: রহিম উদ্দিন" maxLength={40} />
       <Input

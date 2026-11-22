@@ -123,3 +123,32 @@ export async function loadReadings(): Promise<Reading[]> {
     return [];
   }
 }
+
+// App settings the user can change in Settings.
+export type AppSettings = {
+  scanUrl: string; // address of the scan server; empty = use the built-in one (EXPO_PUBLIC_SCAN_URL)
+};
+
+const SETTINGS_KEY = 'roza-safe/settings';
+
+// Reads the settings (defaults if none saved).
+export async function loadSettings(): Promise<AppSettings> {
+  try {
+    const raw = await AsyncStorage.getItem(SETTINGS_KEY);
+    return { scanUrl: '', ...(raw ? JSON.parse(raw) : {}) };
+  } catch {
+    return { scanUrl: '' };
+  }
+}
+
+// Saves some settings, keeping the rest.
+export async function saveSettings(changes: Partial<AppSettings>): Promise<AppSettings> {
+  const next = { ...(await loadSettings()), ...changes };
+  await AsyncStorage.setItem(SETTINGS_KEY, JSON.stringify(next));
+  return next;
+}
+
+// Deletes everything the app saved on this phone (profile, risk, plans, readings, settings).
+export async function deleteAllData(): Promise<void> {
+  await AsyncStorage.multiRemove([PROFILE_KEY, RISK_KEY, MEALS_KEY, READINGS_KEY, SETTINGS_KEY]);
+}

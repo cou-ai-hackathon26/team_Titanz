@@ -79,24 +79,40 @@ export default function EmergencyScreen() {
     }
   }
 
-  // Opens the SMS app with a short message to the family number. The user presses Send.
+  // The short message for the family (the user presses Send themselves).
+  function familyMessage(): string {
+    const who = profile?.name ? profile.name : 'আমি';
+    return `${who}: আমার সুগার কমে যেতে পারে, এখনই আমার কাছে আসুন। (Roza-Safe)`;
+  }
+
+  // With a saved number: opens Messages to that number with the text ready.
+  // Without one: opens the Contacts app (Android) or Messages (iPhone) so the user can pick someone.
   async function alertFamily() {
-    if (!profile?.familyPhone) {
-      router.push('/iftar'); // no number yet: let them add one
-      return;
-    }
-    const who = profile.name ? profile.name : 'আমি';
-    const message = `${who}: আমার সুগার কমে যেতে পারে, এখনই আমার কাছে আসুন। (Roza-Safe)`;
     if (Platform.OS === 'web') {
-      // A computer has no SMS app; on the phone app this opens Messages with the text ready.
-      setNotice(`এখান থেকে মেসেজ পাঠানো যায় না। ফোন থেকে +৮৮০ ${toBanglaDigits(profile.familyPhone)} নম্বরে জানান।`);
+      // A computer has no SMS or Contacts app; on the phone app this opens them.
+      setNotice(
+        profile?.familyPhone
+          ? `এখান থেকে মেসেজ পাঠানো যায় না। ফোন থেকে +৮৮০ ${toBanglaDigits(profile.familyPhone)} নম্বরে জানান।`
+          : 'এখান থেকে কন্টাক্ট খোলা যায় না। ফোনে এই বোতাম কন্টাক্টস খুলবে। নম্বর রাখতে সেটিংসে যান।',
+      );
       return;
     }
+    const body = encodeURIComponent(familyMessage());
     const joiner = Platform.OS === 'ios' ? '&' : '?';
     try {
-      await Linking.openURL(`sms:+880${profile.familyPhone}${joiner}body=${encodeURIComponent(message)}`);
+      if (profile?.familyPhone) {
+        await Linking.openURL(`sms:+880${profile.familyPhone}${joiner}body=${body}`);
+      } else if (Platform.OS === 'android') {
+        await Linking.openURL('content://contacts/people/'); // Android Contacts app
+      } else {
+        await Linking.openURL(`sms:${joiner}body=${body}`); // iPhone: Messages, pick a contact there
+      }
     } catch {
-      setNotice('এই ফোন থেকে মেসেজ খোলা যায়নি। পরিবারের কাউকে নিজে ফোন করুন।');
+      try {
+        await Linking.openURL(`sms:${joiner}body=${body}`); // fallback: Messages without a number
+      } catch {
+        setNotice('এই ফোন থেকে মেসেজ খোলা যায়নি। পরিবারের কাউকে নিজে ফোন করুন।');
+      }
     }
   }
 
@@ -177,7 +193,7 @@ export default function EmergencyScreen() {
         <Button label={`জরুরি কল · ${toBanglaDigits(HELPLINE)}`} sub="Call health helpline" icon="call" variant="Danger" onPress={callHelpline} />
         <Button
           label="পরিবারকে জানান"
-          sub={hasFamily ? 'Alert my family' : 'নম্বর দেওয়া নেই — যোগ করুন'}
+          sub={hasFamily ? 'Alert my family' : 'Open contacts'}
           icon="send"
           variant="Secondary"
           onPress={alertFamily}

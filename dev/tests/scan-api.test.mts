@@ -49,15 +49,17 @@ async function scanWithFakeGemini(status: number | number[], reply: unknown) {
   const savedKey = process.env.GEMINI_API_KEY;
   process.env.GEMINI_API_KEY = 'test-key';
   let sentBody: any = null;
+  const usedKeys: string[] = [];
   globalThis.fetch = (async (_url: string, init: RequestInit) => {
     sentBody = JSON.parse(String(init.body));
+    usedKeys.push((init.headers as Record<string, string>)['x-goog-api-key']);
     calls++;
     const s = statuses.length > 1 ? statuses.shift()! : statuses[0];
     return new Response(JSON.stringify(s === 200 || !Array.isArray(status) ? reply : { error: { message: 'busy' } }), { status: s });
   }) as typeof fetch;
   try {
     const res = await POST(new Request('http://x/api/scan', { method: 'POST', body: JSON.stringify({ image: 'a'.repeat(200) }) }));
-    return { status: res.status, body: await res.json(), sentBody, calls };
+    return { status: res.status, body: await res.json(), sentBody, calls, usedKeys };
   } finally {
     globalThis.fetch = realFetch;
     if (savedKey) process.env.GEMINI_API_KEY = savedKey;
@@ -94,4 +96,19 @@ test('Gemini busy (503): retries, then succeeds or gives a clear busy message', 
   assert.equal(stillBusy.status, 503);
   assert.equal(stillBusy.calls, 3);
   assert.match(stillBusy.body.error, /busy/);
+});
+
+test('Backup keys: key 1 out of free quota (429) → key 2 answers', async () => {
+  process.env.GEMINI_API_KEY_2 = 'backup-key';
+  try {
+    const good = { candidates: [{ content: { parts: [{ text: '{"items":[{"id":"khejur","count":3,"confidence":0.9}],"unknown":[]}' }] }, finishReason: 'STOP' }] };
+    const r = await scanWithFakeGemini([429, 200], good);
+    assert.equal(r.status, 200);
+    assert.deepEqual(r.usedKeys, ['test-key', 'backup-key']);
+    const allOut = await scanWithFakeGemini([429, 429], good);
+    assert.equal(allOut.status, 429); // no Claude key set: clear "limit" message
+    assert.match(allOut.body.error, /limit/);
+  } finally {
+    delete process.env.GEMINI_API_KEY_2;
+  }
 });

@@ -100,7 +100,12 @@ export default function HomeScreen() {
       <StatusBar style="dark" />
       <ScrollView contentContainerStyle={[styles.content, { paddingTop: insets.top + 8, paddingBottom: NAV_HEIGHT + insets.bottom + 24 }]}>
         <View style={styles.header}>
-          <View style={styles.hello}>
+          <Pressable
+            style={styles.hello}
+            onPress={() => router.push('/settings')}
+            accessibilityRole="button"
+            accessibilityLabel="প্রোফাইল ও সেটিংস (Profile and settings)"
+          >
             <View style={styles.avatar}>
               <Text style={styles.avatarText}>{initial}</Text>
             </View>
@@ -108,9 +113,9 @@ export default function HomeScreen() {
               <Text style={styles.salam}>আসসালামু আলাইকুম</Text>
               <Text style={styles.name}>{profile.name || 'বন্ধু'}</Text>
             </View>
-          </View>
+          </Pressable>
           <Pressable
-            onPress={() => router.push('/iftar')}
+            onPress={() => router.push({ pathname: '/iftar', params: { edit: '1' } })}
             accessibilityRole="button"
             accessibilityLabel="মনে করিয়ে দেওয়ার সেটিং (Reminder settings)"
             style={styles.roundButton}
@@ -145,7 +150,7 @@ export default function HomeScreen() {
             <DayRing progress={fast.progress} />
           </View>
         ) : (
-          <Pressable style={styles.countdown} onPress={() => router.push('/iftar')} accessibilityRole="button">
+          <Pressable style={styles.countdown} onPress={() => router.push({ pathname: '/iftar', params: { edit: '1' } })} accessibilityRole="button">
             <Text style={styles.atText}>সেহরি ও ইফতারের সময় দেখতে আপনার জেলা বেছে নিন</Text>
             <Icon name="arrow_forward" size={22} />
           </Pressable>

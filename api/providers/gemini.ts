@@ -21,10 +21,36 @@ function forGemini(schema: unknown): unknown {
   return schema;
 }
 
-// Sends the photo + instructions to Gemini and returns its JSON answer.
-export async function askGemini(imageBase64: string, systemPrompt: string, schema: object, question: string): Promise<AiAnswer> {
-  const key = process.env.GEMINI_API_KEY;
-  if (!key) throw new ScanError(500, 'Server has no GEMINI_API_KEY set');
+// All Gemini keys set on the server, in order: GEMINI_API_KEY, then GEMINI_API_KEY_2 … GEMINI_API_KEY_5.
+// Backup keys (e.g. from teammates' Google accounts) are used when the first one hits the free-tier limit.
+export function geminiKeys(): string[] {
+  const names = ['GEMINI_API_KEY', 'GEMINI_API_KEY_2', 'GEMINI_API_KEY_3', 'GEMINI_API_KEY_4', 'GEMINI_API_KEY_5'];
+  return names.map((n) => (process.env[n] ?? '').trim()).filter((k) => k.length > 0);
+}
+
+// True for errors where another key may work (this key's limit is used up, or the key is wrong).
+export function keyProblem(error: unknown): boolean {
+  return error instanceof ScanError && (error.status === 429 || /key/i.test(error.message));
+}
+
+// Tries each Gemini key in turn until one answers. Busy (503) or photo problems stop at once.
+export async function askGeminiWithBackups(imageBase64: string, systemPrompt: string, schema: object, question: string): Promise<AiAnswer> {
+  const keys = geminiKeys();
+  if (keys.length === 0) throw new ScanError(500, 'Server has no GEMINI_API_KEY set');
+  let lastError: unknown = null;
+  for (const key of keys) {
+    try {
+      return await askGemini(key, imageBase64, systemPrompt, schema, question);
+    } catch (error) {
+      lastError = error;
+      if (!keyProblem(error)) throw error; // not about the key: another key will not help
+    }
+  }
+  throw lastError;
+}
+
+// Sends the photo + instructions to Gemini with one key and returns its JSON answer.
+export async function askGemini(key: string, imageBase64: string, systemPrompt: string, schema: object, question: string): Promise<AiAnswer> {
   const model = process.env.SCAN_MODEL || DEFAULT_MODEL;
 
   const requestBody = JSON.stringify({
@@ -42,7 +68,7 @@ export async function askGemini(imageBase64: string, systemPrompt: string, schem
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'x-goog-api-key': key },
         body: requestBody,
-        signal: AbortSignal.timeout(20_000), // 3 tries x 20 s + waits stays under the app's 75 s limit
+        signal: AbortSignal.timeout(15_000), // 3 tries x 15 s + waits (~50 s) leaves time for a backup, under the app's 90 s limit
       });
     } catch {
       res = null; // network problem or timeout: try again

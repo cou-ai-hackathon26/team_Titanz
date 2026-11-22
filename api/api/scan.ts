@@ -7,7 +7,7 @@
 // Response: { "items": [{ "id": "jilapi", "count": 2, "confidence": 0.86 }], "unknown": ["green chutney"], "model": "..." }
 // Errors:   { "error": "..." } with a 4xx/5xx status. The app then shows the manual food picker.
 import { FOOD_LIST } from '../food-list.ts';
-import { askGemini } from '../providers/gemini.ts';
+import { askGeminiWithBackups } from '../providers/gemini.ts';
 import { askClaude } from '../providers/claude.ts';
 import { ScanError } from '../providers/scanError.ts';
 
@@ -97,7 +97,19 @@ export function cleanAnswer(raw: { items?: ScanItem[]; unknown?: string[] }) {
   return { items: [...merged.values()], unknown };
 }
 
-// The endpoint: check the photo, ask Claude, clean the answer, send it back.
+// Asks the AI services in order until one answers (see the comment in POST).
+async function askWithFallback(image: string) {
+  if (process.env.SCAN_PROVIDER === 'claude') return askClaude(image, SYSTEM_PROMPT, ANSWER_SCHEMA, QUESTION);
+  try {
+    return await askGeminiWithBackups(image, SYSTEM_PROMPT, ANSWER_SCHEMA, QUESTION);
+  } catch (error) {
+    const outOfGemini = error instanceof ScanError && (error.status === 429 || error.status === 503 || /key/i.test(error.message));
+    if (outOfGemini && process.env.ANTHROPIC_API_KEY) return askClaude(image, SYSTEM_PROMPT, ANSWER_SCHEMA, QUESTION);
+    throw error;
+  }
+}
+
+// The endpoint: check the photo, ask the AI, clean the answer, send it back.
 export async function POST(request: Request): Promise<Response> {
   let image: unknown;
   try {
@@ -107,11 +119,10 @@ export async function POST(request: Request): Promise<Response> {
   }
   if (typeof image !== 'string' || image.length < 100) return json({ error: 'Missing photo' }, 400);
   if (image.length > MAX_IMAGE_CHARS) return json({ error: 'Photo too large' }, 413);
-  // Which AI to ask: SCAN_PROVIDER if set, otherwise Gemini.
-  const provider = process.env.SCAN_PROVIDER === 'claude' ? 'claude' : 'gemini';
+  // Which AI to ask: SCAN_PROVIDER=claude → Claude only. Otherwise Gemini (all keys in turn), and if Gemini
+  // is out of quota or busy and a Claude key is set, Claude as the last backup.
   try {
-    const ask = provider === 'claude' ? askClaude : askGemini;
-    const answer = await ask(image, SYSTEM_PROMPT, ANSWER_SCHEMA, QUESTION);
+    const answer = await askWithFallback(image);
     const cleaned = cleanAnswer(answer.raw as { items?: ScanItem[]; unknown?: string[] });
     return json({ ...cleaned, model: answer.model });
   } catch (error) {

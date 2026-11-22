@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
 import { View, StyleSheet } from 'react-native';
 import Text from '../components/Txt'; // <Text> that draws Bangla digits clearly
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
+import { goBack } from '../lib/nav';
 import SetupLayout from '../components/SetupLayout';
 import Input from '../components/Input';
 import Button from '../components/Button';
@@ -10,23 +11,15 @@ import Icon, { IconName } from '../components/Icon';
 import PickerSheet from '../components/PickerSheet';
 import { loadProfile, saveProfile } from '../lib/storage';
 import { districts, findDistrict, fastTimes, formatClock } from '../lib/places';
-import { onlyDigits, toBanglaDigits } from '../lib/bangla';
+import { isValidPhone, formatPhone, cleanPhoneInput } from '../lib/phone';
 import { colors, fonts, radius } from '../theme/tokens';
-
-// Checks a Bangladeshi mobile number typed after +880 (10 digits, starts with 13–19).
-function isValidPhone(digits: string): boolean {
-  return /^1[3-9][0-9]{8}$/.test(digits);
-}
-
-// Shows "1819234567" as "১৮১৯ ২৩৪ ৫৬৭" (Bangla digits, grouped like the Figma design).
-function formatPhone(digits: string): string {
-  const parts = [digits.slice(0, 4), digits.slice(4, 7), digits.slice(7, 10)].filter(Boolean);
-  return toBanglaDigits(parts.join(' '));
-}
 
 // Screen 00h · Iftar & contact (setup step 2 of 2): district (for sehri/iftar times),
 // optional family number for emergencies, and the pre-iftar reminder switch.
+// Opened from Settings with ?edit=1: saving goes back to Settings instead of starting the risk check.
 export default function IftarScreen() {
+  const { edit } = useLocalSearchParams<{ edit?: string }>();
+  const editing = edit === '1';
   const [districtId, setDistrictId] = useState<string | null>(null);
   const [phone, setPhone] = useState(''); // 10 digits after +880
   const [reminder, setReminder] = useState(true);
@@ -48,27 +41,33 @@ export default function IftarScreen() {
   const showPhoneError = !phoneOk && (phoneTouched || phone.length === 10); // don't nag while still typing
   const canContinue = !!district && phoneOk;
 
-  // Reads the typed number. Also accepts it written with the leading 0 (01819…).
+  // Reads the typed number (with or without 0 / +880, Bangla or English digits).
   function onPhoneChange(text: string) {
-    let digits = onlyDigits(text);
-    if (digits.startsWith('0')) digits = digits.slice(1);
-    setPhone(digits.slice(0, 10));
+    setPhone(cleanPhoneInput(text));
   }
 
   // Save everything, mark setup as done, and start the risk check.
   async function finish() {
     await saveProfile({ districtId, familyPhone: phone, reminder, onboarded: true });
-    router.push('/risk-quiz');
+    if (editing) goBack('/settings');
+    else router.push('/risk-quiz');
   }
 
   return (
     <SetupLayout
-      backTo="/about-you"
+      backTo={editing ? '/settings' : '/about-you'}
       step={2}
       totalSteps={2}
       title="ইফতারের সময় ও জরুরি যোগাযোগ"
       subtitle="আপনার এলাকার সময় অনুযায়ী মনে করিয়ে দেব"
-      bottom={<Button label="ঝুঁকি যাচাই শুরু করুন" sub="Start risk check" onPress={finish} disabled={!canContinue} />}
+      bottom={
+        <Button
+          label={editing ? 'সেভ করুন' : 'ঝুঁকি যাচাই শুরু করুন'}
+          sub={editing ? 'Save' : 'Start risk check'}
+          onPress={finish}
+          disabled={!canContinue}
+        />
+      }
     >
       <Input
         label="আপনার জেলা"
