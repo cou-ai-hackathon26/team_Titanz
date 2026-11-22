@@ -7,14 +7,14 @@ Format: `- YYYY-MM-DD HH:MM · who · what changed · next step`
 | Feature | Status |
 |---|---|
 | M1 Onboarding | ✅ done (web preview tested; check on phone) |
-| M2 Risk quiz | ⬜ todo |
-| M3 Risk result | ⬜ todo |
+| M2 Risk quiz | ✅ done (web preview tested; check on phone) |
+| M3 Risk result | ✅ done (web preview tested; check on phone) |
 | M4 Meal scan | ⬜ todo |
 | M5 Sugar forecast | ⬜ todo |
 | M6 Pre-iftar check | ⬜ todo |
 | API /api/scan | ⬜ todo |
 | foods.ts data | ⬜ todo |
-| dar.ts scoring | ⬜ todo |
+| dar.ts scoring | ✅ done (official IDF-DAR 2021 Table 2, 7 tests pass: `npm test`) |
 | APK build | ⬜ todo |
 | README + demo video | ⬜ todo |
 
@@ -40,3 +40,4 @@ Format: `- YYYY-MM-DD HH:MM · who · what changed · next step`
 - 2026-11-22 09:10 · Claude · Decided no sign-in (00e/00f not built, PRODUCT.md updated). Expo app created (TypeScript, Expo Router, Hind Siliguri + Inter fonts), theme/tokens.ts from Figma, temporary start screen; tsc + Android bundle pass · Next: git init + first commit, then lib/dar.ts + Risk quiz (M2) + Risk result (M3)
 - 2026-11-22 · Claude · M1 Onboarding built from Figma: Welcome, Guide 1–3, About you, Iftar & contact (district picker, real sehri/iftar times from sun maths, +880 number check, reminder toggle). Components: Button, Input, ChoiceChip, Toggle, BackButton, StepBar, PickerSheet, Icon. Profile saved on phone only. Risk quiz is a placeholder · Next: lib/dar.ts + Risk quiz (M2) + Risk result (M3)
 - 2026-11-22 · Claude · Fixes: Bangla digits now drawn with Noto Sans Bengali (Hind Siliguri "১" was unreadable) via components/Txt.tsx; back arrows never dead-end (lib/nav.ts goBack with fallback). Welcome = Figma 74:616 minus "সাহায্য" (no help screen yet) · Next: risk quiz (M2)
+- 2026-11-22 · Claude · M2 Risk quiz + M3 Risk result: lib/dar.ts (all 14 IDF-DAR elements, exact points, Bangla wording), quick quiz of 8 (+pregnancy for women; treatment options filtered by About-you answer), gauge drawn from score, band advice, reasons, share report, disclaimer. Our additions marked in code: 'don't know' HbA1c/tablet/insulin = highest points in that group. Home is a placeholder · Next: lib/foods.ts + scan API (M4)

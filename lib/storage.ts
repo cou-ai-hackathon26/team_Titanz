@@ -46,3 +46,28 @@ export async function saveProfile(changes: Partial<Profile>): Promise<Profile> {
   await AsyncStorage.setItem(PROFILE_KEY, JSON.stringify(next));
   return next;
 }
+
+// The saved risk check result (IDF-DAR quick quiz).
+export type RiskRecord = {
+  answers: Record<string, string>; // IDF-DAR element id -> option id
+  score: number;
+  band: 'low' | 'moderate' | 'high';
+  date: string; // ISO date-time when it was done
+};
+
+const RISK_KEY = 'roza-safe/risk';
+
+// Saves the latest risk check result on the phone.
+export async function saveRisk(record: RiskRecord): Promise<void> {
+  await AsyncStorage.setItem(RISK_KEY, JSON.stringify(record));
+}
+
+// Reads the latest risk check result, or null if the user has not done one.
+export async function loadRisk(): Promise<RiskRecord | null> {
+  try {
+    const raw = await AsyncStorage.getItem(RISK_KEY);
+    return raw ? (JSON.parse(raw) as RiskRecord) : null;
+  } catch {
+    return null;
+  }
+}
