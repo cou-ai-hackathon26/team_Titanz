@@ -8,7 +8,7 @@ export type ScanResult = {
 };
 
 export const LOW_CONFIDENCE = 0.6; // below this, the app asks the user to check the food
-const TIMEOUT_MS = 45_000;
+const TIMEOUT_MS = 75_000; // the server may retry a busy AI up to 2 times (see api/providers/gemini.ts)
 
 // Calls the scan API. Throws an Error with a Bangla message the screen can show.
 export async function scanPlate(base64Jpeg: string): Promise<ScanResult> {
@@ -25,6 +25,7 @@ export async function scanPlate(base64Jpeg: string): Promise<ScanResult> {
       signal: controller.signal,
     });
     const body = await res.json().catch(() => ({}));
+    if (res.status === 503 || res.status === 429) throw new Error('AI এখন ব্যস্ত। এক মিনিট পর আবার ছবি তুলুন, অথবা খাবারগুলো নিজে যোগ করুন।');
     if (!res.ok) throw new Error(`ছবি পড়া যায়নি (${res.status})। খাবারগুলো নিজে যোগ করুন।`);
     if (!Array.isArray(body.items) || !Array.isArray(body.unknown)) throw new Error('সার্ভারের উত্তর বোঝা যায়নি।');
     return body as ScanResult;

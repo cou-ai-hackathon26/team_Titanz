@@ -4,6 +4,11 @@
 import { ScanError, type AiAnswer } from './scanError.ts';
 
 const DEFAULT_MODEL = 'gemini-4-hydrogen'; // on the free tier, reads images (checked 22 Nov 2026)
+const MAX_TRIES = 3; // 1 try + 2 retries when Google says it is busy
+const RETRY_WAIT_MS = 1500; // wait 1.5 s, then 3 s
+
+// Waits for the given number of milliseconds.
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 // Removes "additionalProperties" (not needed by Gemini) from our JSON schema, at every level.
 function forGemini(schema: unknown): unknown {
@@ -22,21 +27,31 @@ export async function askGemini(imageBase64: string, systemPrompt: string, schem
   if (!key) throw new ScanError(500, 'Server has no GEMINI_API_KEY set');
   const model = process.env.SCAN_MODEL || DEFAULT_MODEL;
 
-  let res: Response;
-  try {
-    res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'x-goog-api-key': key },
-      body: JSON.stringify({
-        systemInstruction: { parts: [{ text: systemPrompt }] },
-        contents: [{ role: 'user', parts: [{ inlineData: { mimeType: 'image/jpeg', data: imageBase64 } }, { text: question }] }],
-        generationConfig: { responseMimeType: 'application/json', responseJsonSchema: forGemini(schema), maxOutputTokens: 8000 },
-      }),
-      signal: AbortSignal.timeout(40_000),
-    });
-  } catch {
-    throw new ScanError(502, 'Could not reach the Gemini service');
+  const requestBody = JSON.stringify({
+    systemInstruction: { parts: [{ text: systemPrompt }] },
+    contents: [{ role: 'user', parts: [{ inlineData: { mimeType: 'image/jpeg', data: imageBase64 } }, { text: question }] }],
+    generationConfig: { responseMimeType: 'application/json', responseJsonSchema: forGemini(schema), maxOutputTokens: 8000 },
+  });
+
+  // The free tier is sometimes busy (503) or has a short hiccup (500). Wait a moment and try again, up to 2 times.
+  let res: Response | null = null;
+  for (let attempt = 0; attempt < MAX_TRIES; attempt++) {
+    if (attempt > 0) await sleep(RETRY_WAIT_MS * attempt);
+    try {
+      res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-goog-api-key': key },
+        body: requestBody,
+        signal: AbortSignal.timeout(20_000), // 3 tries x 20 s + waits stays under the app's 75 s limit
+      });
+    } catch {
+      res = null; // network problem or timeout: try again
+      continue;
+    }
+    if (res.status !== 503 && res.status !== 500) break;
   }
+  if (!res) throw new ScanError(502, 'Could not reach the Gemini service');
+  if (res.status === 503) throw new ScanError(503, 'The AI is busy right now, please try again in a minute');
 
   const body = await res.json().catch(() => ({}));
   if (!res.ok) {

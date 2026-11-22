@@ -42,18 +42,22 @@ test('POST rejects bad requests before calling the AI', async () => {
 });
 
 // Runs one scan with a fake Gemini reply (no internet, no real key) and returns status + body.
-async function scanWithFakeGemini(status: number, reply: unknown) {
+async function scanWithFakeGemini(status: number | number[], reply: unknown) {
+  const statuses = Array.isArray(status) ? [...status] : [status];
+  let calls = 0;
   const realFetch = globalThis.fetch;
   const savedKey = process.env.GEMINI_API_KEY;
   process.env.GEMINI_API_KEY = 'test-key';
   let sentBody: any = null;
   globalThis.fetch = (async (_url: string, init: RequestInit) => {
     sentBody = JSON.parse(String(init.body));
-    return new Response(JSON.stringify(reply), { status });
+    calls++;
+    const s = statuses.length > 1 ? statuses.shift()! : statuses[0];
+    return new Response(JSON.stringify(s === 200 || !Array.isArray(status) ? reply : { error: { message: 'busy' } }), { status: s });
   }) as typeof fetch;
   try {
     const res = await POST(new Request('http://x/api/scan', { method: 'POST', body: JSON.stringify({ image: 'a'.repeat(200) }) }));
-    return { status: res.status, body: await res.json(), sentBody };
+    return { status: res.status, body: await res.json(), sentBody, calls };
   } finally {
     globalThis.fetch = realFetch;
     if (savedKey) process.env.GEMINI_API_KEY = savedKey;
@@ -79,4 +83,15 @@ test('Gemini errors become clear messages', async () => {
   assert.equal((await scanWithFakeGemini(200, { promptFeedback: { blockReason: 'SAFETY' } })).status, 422);
   assert.equal((await scanWithFakeGemini(200, { candidates: [{ content: { parts: [{ text: '{"items": [' }] }, finishReason: 'MAX_TOKENS' }] })).body.error, 'The AI answer was cut off');
   assert.equal((await scanWithFakeGemini(200, { candidates: [{ content: { parts: [{ text: 'not json' }] }, finishReason: 'STOP' }] })).body.error, 'The AI answer was not valid JSON');
+});
+
+test('Gemini busy (503): retries, then succeeds or gives a clear busy message', async () => {
+  const good = { candidates: [{ content: { parts: [{ text: '{"items":[{"id":"khejur","count":3,"confidence":0.9}],"unknown":[]}' }] }, finishReason: 'STOP' }] };
+  const recovered = await scanWithFakeGemini([503, 200], good);
+  assert.equal(recovered.status, 200);
+  assert.equal(recovered.calls, 2);
+  const stillBusy = await scanWithFakeGemini([503, 503, 503], good);
+  assert.equal(stillBusy.status, 503);
+  assert.equal(stillBusy.calls, 3);
+  assert.match(stillBusy.body.error, /busy/);
 });

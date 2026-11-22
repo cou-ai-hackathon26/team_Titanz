@@ -46,8 +46,14 @@ const SYSTEM_PROMPT = `You look at a photo of a Bangladeshi iftar or sehri plate
 Use ONLY these food ids. "1 unit" is the amount written after each food:
 ${FOOD_LIST.map((f) => `- ${f.id}: ${f.nameEn} (${f.nameBn}), 1 ${f.unit} = ${f.portion}`).join('\n')}
 
+How to count:
+- First look at the whole photo and find each separate food. Then count each food on its own.
+- For piece foods, count only the separate pieces you can actually see. Do not guess hidden pieces, and do not count one piece twice.
+- For loose foods (chola, muri, haleem, rice, dal...), give how many cups, bowls or glasses it looks like, at least 1.
+- If you are not sure of the exact number, give the lower number and lower the confidence.
+
 Rules:
-- count = how many units of that food are on the plate (pieces for piece foods; cups, bowls or glasses for the others). Round to the nearest whole number, at least 1.
+- count = how many units of that food are on the plate. Whole number, at least 1.
 - confidence = how sure you are that the food is really this id, from 0 to 1. Use below 0.6 when you are unsure.
 - List each food id once. If you see food that is not in the list, put a short English name for it in "unknown" instead.
 - If the photo shows no food, return empty lists.

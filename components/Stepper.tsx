@@ -4,7 +4,7 @@ import Icon from './Icon';
 import { colors, fonts, radius } from '../theme/tokens';
 import { toBanglaDigits } from '../lib/bangla';
 
-export const STEPPER_MAX = 3; // Figma "Stepper": count 0–3
+export const STEPPER_MAX = 10; // Figma shows 0–3, but real plates have 5+ dates; matches the scan API cap (10)
 
 type Props = {
   value: number;
