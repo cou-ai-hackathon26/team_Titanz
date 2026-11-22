@@ -10,7 +10,7 @@ import QuizAnswer from '../components/QuizAnswer';
 import Icon from '../components/Icon';
 import { goBack } from '../lib/nav';
 import { loadProfile, saveRisk, Profile } from '../lib/storage';
-import { QUICK_QUIZ_IDS, DarAnswers, getElement, scoreDar, treatmentOptionIds } from '../lib/dar';
+import { QUICK_QUIZ_IDS, DarAnswers, getElement, scoreDar, treatmentOptionIds, treatmentQuestion } from '../lib/dar';
 import { toBanglaDigits } from '../lib/bangla';
 import { colors, fonts, radius } from '../theme/tokens';
 
@@ -32,6 +32,7 @@ function planQuiz(profile: Profile) {
     known,
     treatmentIds: treatmentChoice === 'auto-other' ? [] : treatmentChoice,
     under70: profile.age !== null && profile.age < 70, // hide the "over 70, no help at home" answer
+    treatmentWords: treatmentQuestion(profile.treatment), // "which tablet?" / "which insulin?"
   };
 }
 
@@ -57,7 +58,9 @@ export default function RiskQuizScreen() {
   if (!plan) return <View style={styles.screen} />; // still loading (a split second)
 
   const total = plan.ids.length;
-  const element = getElement(plan.ids[index]);
+  const baseElement = getElement(plan.ids[index]);
+  // The medicine question uses words that fit the person ("which tablet?" or "which insulin?").
+  const element = baseElement.id === 'treatment' && plan.treatmentWords ? { ...baseElement, ...plan.treatmentWords } : baseElement;
   // Only show answers that can apply to this person.
   const options = element.options.filter((o) => {
     if (element.id === 'treatment') return plan.treatmentIds.includes(o.id);

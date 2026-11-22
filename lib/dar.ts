@@ -73,7 +73,7 @@ export const DAR_ELEMENTS: DarElement[] = [
     questionBn: 'আপনি কোন ওষুধ নেন?', questionEn: 'Which medicine do you take?',
     hintBn: 'ওষুধের পাতা বা প্রেসক্রিপশন দেখে নিন।',
     options: [
-      { id: 'other', points: 0, labelBn: 'অন্য ট্যাবলেট (যেমন মেটফরমিন) বা শুধু খাবার নিয়ন্ত্রণ', labelEn: 'Other tablets (e.g. metformin) or diet only' },
+      { id: 'other', points: 0, labelBn: 'মেটফরমিন বা অন্য ট্যাবলেট', labelEn: 'Metformin or other tablets (no sulfonylurea)' },
       { id: 'gliclazide_etc', points: 0.5, labelBn: 'গ্লিক্লাজাইড / গ্লিমেপিরাইড / রিপাগ্লিনাইড', labelEn: 'Gliclazide, glimepiride or repaglinide', reasonBn: 'সুগার কমাতে পারে এমন ট্যাবলেট' },
       { id: 'glibenclamide', points: 1, labelBn: 'গ্লিবেনক্লামাইড', labelEn: 'Glibenclamide', reasonBn: 'সুগার কমাতে পারে এমন ট্যাবলেট' },
       { id: 'basal', points: 1.5, labelBn: 'শুধু দিনে একবার লম্বা-মেয়াদি ইনসুলিন', labelEn: 'Basal insulin only', reasonBn: 'ইনসুলিন নেন' },
@@ -225,6 +225,15 @@ export function scoreDar(answers: DarAnswers): DarResult {
 
 // Which treatment options to show, based on what the user said on "About you".
 // Diet only -> no question needed (answer "other"). Tablets -> tablet options. Insulin -> insulin options.
+// The medicine question, worded for what the user said on "About you".
+export function treatmentQuestion(treatment: 'diet' | 'tablets' | 'insulin' | null) {
+  if (treatment === 'tablets')
+    return { questionBn: 'আপনি কোন ট্যাবলেট খান?', questionEn: 'Which tablet do you take?', hintBn: 'ওষুধের পাতা বা প্রেসক্রিপশন দেখে নিন। কয়েকটা খেলে, তালিকার নিচের দিকেরটা বেছে নিন।' };
+  if (treatment === 'insulin')
+    return { questionBn: 'আপনি কোন ইনসুলিন নেন?', questionEn: 'Which insulin do you take?', hintBn: 'ইনসুলিনের সাথে ট্যাবলেটও খেলে, শুধু ইনসুলিনের ধরন বেছে নিন।' };
+  return null; // use the general wording
+}
+
 export function treatmentOptionIds(treatment: 'diet' | 'tablets' | 'insulin' | null): string[] | 'auto-other' {
   if (treatment === 'diet') return 'auto-other';
   if (treatment === 'tablets') return ['other', 'gliclazide_etc', 'glibenclamide', 'tablet_unknown'];
