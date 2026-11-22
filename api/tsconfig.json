@@ -9,5 +9,5 @@
     "skipLibCheck": true,
     "types": ["node"]
   },
-  "include": ["api", "food-list.ts", "dev-server.ts"]
+  "include": ["api", "providers", "food-list.ts", "dev-server.ts"]
 }

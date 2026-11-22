@@ -33,10 +33,50 @@ test('POST rejects bad requests before calling the AI', async () => {
   assert.equal((await post('not json')).status, 400);
   assert.equal((await post('{}')).status, 400);
   assert.equal((await post(JSON.stringify({ image: 'abc' }))).status, 400);
-  const saved = process.env.ANTHROPIC_API_KEY;
-  delete process.env.ANTHROPIC_API_KEY;
+  const saved = process.env.GEMINI_API_KEY;
+  delete process.env.GEMINI_API_KEY;
   const noKey = await post(JSON.stringify({ image: 'a'.repeat(200) }));
   assert.equal(noKey.status, 500);
-  assert.match((await noKey.json()).error, /ANTHROPIC_API_KEY/);
-  if (saved) process.env.ANTHROPIC_API_KEY = saved;
+  assert.match((await noKey.json()).error, /GEMINI_API_KEY/);
+  if (saved) process.env.GEMINI_API_KEY = saved;
+});
+
+// Runs one scan with a fake Gemini reply (no internet, no real key) and returns status + body.
+async function scanWithFakeGemini(status: number, reply: unknown) {
+  const realFetch = globalThis.fetch;
+  const savedKey = process.env.GEMINI_API_KEY;
+  process.env.GEMINI_API_KEY = 'test-key';
+  let sentBody: any = null;
+  globalThis.fetch = (async (_url: string, init: RequestInit) => {
+    sentBody = JSON.parse(String(init.body));
+    return new Response(JSON.stringify(reply), { status });
+  }) as typeof fetch;
+  try {
+    const res = await POST(new Request('http://x/api/scan', { method: 'POST', body: JSON.stringify({ image: 'a'.repeat(200) }) }));
+    return { status: res.status, body: await res.json(), sentBody };
+  } finally {
+    globalThis.fetch = realFetch;
+    if (savedKey) process.env.GEMINI_API_KEY = savedKey;
+    else delete process.env.GEMINI_API_KEY;
+  }
+}
+
+test('Gemini: good answer is parsed and cleaned; request has photo + JSON schema with food ids', async () => {
+  const answer = { items: [{ id: 'jilapi', count: 2, confidence: 0.9 }, { id: 'burger', count: 1, confidence: 0.9 }], unknown: ['chutney'] };
+  const r = await scanWithFakeGemini(200, { candidates: [{ content: { parts: [{ text: JSON.stringify(answer) }] }, finishReason: 'STOP' }], modelVersion: 'gemini-4-hydrogen' });
+  assert.equal(r.status, 200);
+  assert.deepEqual(r.body, { items: [{ id: 'jilapi', count: 2, confidence: 0.9 }], unknown: ['chutney'], model: 'gemini-4-hydrogen' });
+  assert.equal(r.sentBody.contents[0].parts[0].inlineData.mimeType, 'image/jpeg');
+  assert.equal(r.sentBody.generationConfig.responseMimeType, 'application/json');
+  assert.ok(r.sentBody.generationConfig.responseJsonSchema.properties.items.items.properties.id.enum.includes('khejur'));
+  assert.ok(!JSON.stringify(r.sentBody.generationConfig).includes('additionalProperties'));
+});
+
+test('Gemini errors become clear messages', async () => {
+  assert.equal((await scanWithFakeGemini(400, { error: { message: 'API key not valid. Please pass a valid API key.' } })).body.error, 'Server Gemini key is wrong');
+  assert.equal((await scanWithFakeGemini(429, { error: { message: 'Resource exhausted' } })).status, 429);
+  assert.match((await scanWithFakeGemini(404, { error: { message: 'not found' } })).body.error, /not found/);
+  assert.equal((await scanWithFakeGemini(200, { promptFeedback: { blockReason: 'SAFETY' } })).status, 422);
+  assert.equal((await scanWithFakeGemini(200, { candidates: [{ content: { parts: [{ text: '{"items": [' }] }, finishReason: 'MAX_TOKENS' }] })).body.error, 'The AI answer was cut off');
+  assert.equal((await scanWithFakeGemini(200, { candidates: [{ content: { parts: [{ text: 'not json' }] }, finishReason: 'STOP' }] })).body.error, 'The AI answer was not valid JSON');
 });

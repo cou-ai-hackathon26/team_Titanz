@@ -9,7 +9,7 @@ Format: `- YYYY-MM-DD HH:MM · who · what changed · next step`
 | M1 Onboarding | ✅ done (web preview tested; check on phone) |
 | M2 Risk quiz | ✅ done (web preview tested; check on phone) |
 | M3 Risk result | ✅ done (web preview tested; check on phone) |
-| M4 Meal scan | 🟨 built; real AI not tested yet (needs Anthropic API key) |
+| M4 Meal scan | 🟨 built; real AI not tested yet (Nadim to add Gemini key) |
 | M5 Sugar forecast | ⬜ todo |
 | M6 Pre-iftar check | ⬜ todo |
 | API /api/scan | 🟨 built + tested without key; not deployed |
@@ -44,3 +44,4 @@ Format: `- YYYY-MM-DD HH:MM · who · what changed · next step`
 - 2026-11-22 · Claude · Quiz fixes from Nadim's test: answers now least→most risk (unaware hypo was listed first and misread), clearer wording; kidney asks 'has a doctor said…' with 'don't know' (0 pts + 'get tested' chip); 70+ option hidden if age < 70; 9 tests pass · Next: food table + scan (M4)
 - 2026-11-22 · Claude · Medicine question worded per About-you answer ('which tablet?' / 'which insulin?' + hints for several pills or pills+insulin); 'other' answer now 'মেটফরমিন বা অন্য ট্যাবলেট'. Checked: tablets → 4 tablet answers; diet only → question skipped (7 questions)
 - 2026-11-22 · Claude · M4 Meal scan: lib/foods.ts (34 foods), lib/meal.ts (carbs, GL, bands), api/api/scan.ts (Claude vision, JSON schema with food-id enum, answer cleaning, fallback, errors), local dev server, camera screen (live camera, flash, flip, gallery, permission screen), result screen (AI foods, unsure '?', −/+ 0–3, add/replace by hand, totals, carb bar). 17 tests pass. Tested in web preview with no key: error path + manual add + totals + forecast hand-off. Forecast is a placeholder · Next: Nadim adds API key and tests 15 real photos; then M5 forecast
+- 2026-11-22 · Claude · Scan AI switched to Gemini (free key, gemini-4-hydrogen, REST + JSON schema); Claude kept behind SCAN_PROVIDER=claude. Code split into api/providers/. 19 tests pass (fake Gemini replies). Key NOT stored by Claude: Nadim pastes it into api/.env.local · Next: real scan test, then M5 forecast

@@ -1,14 +1,17 @@
-// POST /api/scan — reads an iftar plate photo with Claude (vision) and returns which foods are on it.
+// POST /api/scan — reads an iftar plate photo with a vision AI and returns which foods are on it.
+// AI: Google Gemini by default (GEMINI_API_KEY, free tier). Set SCAN_PROVIDER=claude to use Claude instead.
 // The AI ONLY names foods and counts. All sugar maths happens in the app (lib/meal.ts, lib/forecast.ts).
-// The API key lives only in Vercel env vars (ANTHROPIC_API_KEY). Never put it in the app.
+// API keys live only in Vercel env vars (or api/.env.local for local tests). Never put a key in the app.
 //
 // Request:  { "image": "<base64 jpeg>" }
 // Response: { "items": [{ "id": "jilapi", "count": 2, "confidence": 0.86 }], "unknown": ["green chutney"], "model": "..." }
 // Errors:   { "error": "..." } with a 4xx/5xx status. The app then shows the manual food picker.
-import Anthropic from '@anthropic-ai/sdk';
 import { FOOD_LIST } from '../food-list.ts';
+import { askGemini } from '../providers/gemini.ts';
+import { askClaude } from '../providers/claude.ts';
+import { ScanError } from '../providers/scanError.ts';
 
-const MODEL = process.env.SCAN_MODEL || 'claude-opus-5-5';
+const QUESTION = 'Which foods are on this plate, and how many of each?';
 const MAX_IMAGE_CHARS = 7_000_000; // ~5 MB photo after base64. The app sends ~1024px JPEGs (~150–300 KB).
 const MAX_COUNT = 10; // more than 10 of one food on one plate is almost surely a mistake
 
@@ -49,8 +52,6 @@ Rules:
 - List each food id once. If you see food that is not in the list, put a short English name for it in "unknown" instead.
 - If the photo shows no food, return empty lists.
 - Never give medical, diet or medicine advice. Only identify foods.`;
-
-const client = new Anthropic(); // reads ANTHROPIC_API_KEY from the environment
 
 // Lets the app's web preview call this API from another address (browsers block it otherwise).
 const CORS_HEADERS = {
@@ -100,41 +101,15 @@ export async function POST(request: Request): Promise<Response> {
   }
   if (typeof image !== 'string' || image.length < 100) return json({ error: 'Missing photo' }, 400);
   if (image.length > MAX_IMAGE_CHARS) return json({ error: 'Photo too large' }, 413);
-  if (!process.env.ANTHROPIC_API_KEY) return json({ error: 'Server has no ANTHROPIC_API_KEY set' }, 500);
-
+  // Which AI to ask: SCAN_PROVIDER if set, otherwise Gemini.
+  const provider = process.env.SCAN_PROVIDER === 'claude' ? 'claude' : 'gemini';
   try {
-    const response = await client.beta.messages.create({
-      model: MODEL,
-      max_tokens: 8000,
-      // If a safety check declines the request, the API retries on a fallback model automatically.
-      betas: ['server-side-fallback-2026-07-01'],
-      fallbacks: 'default',
-      output_config: { effort: 'low', format: { type: 'json_schema', schema: ANSWER_SCHEMA } },
-      system: SYSTEM_PROMPT,
-      messages: [
-        {
-          role: 'user',
-          content: [
-            { type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data: image } },
-            { type: 'text', text: 'Which foods are on this plate, and how many of each?' },
-          ],
-        },
-      ],
-    });
-
-    if (response.stop_reason === 'refusal') return json({ error: 'The AI could not read this photo' }, 422);
-    if (response.stop_reason === 'max_tokens') return json({ error: 'The AI answer was cut off' }, 502);
-    const text = response.content.find((b) => b.type === 'text');
-    if (!text || text.type !== 'text') return json({ error: 'The AI gave no answer' }, 502);
-
-    const cleaned = cleanAnswer(JSON.parse(text.text));
-    return json({ ...cleaned, model: response.model });
+    const ask = provider === 'claude' ? askClaude : askGemini;
+    const answer = await ask(image, SYSTEM_PROMPT, ANSWER_SCHEMA, QUESTION);
+    const cleaned = cleanAnswer(answer.raw as { items?: ScanItem[]; unknown?: string[] });
+    return json({ ...cleaned, model: answer.model });
   } catch (error) {
-    if (error instanceof Anthropic.AuthenticationError) return json({ error: 'Server API key is wrong' }, 500);
-    if (error instanceof Anthropic.RateLimitError) return json({ error: 'Too many scans right now, try again in a minute' }, 429);
-    if (error instanceof Anthropic.BadRequestError) return json({ error: `AI request rejected: ${error.message}` }, 502);
-    if (error instanceof Anthropic.APIError) return json({ error: `AI service error ${error.status}` }, 502);
-    if (error instanceof SyntaxError) return json({ error: 'The AI answer was not valid JSON' }, 502);
+    if (error instanceof ScanError) return json({ error: error.message }, error.status);
     return json({ error: 'Could not reach the AI service' }, 502);
   }
 }

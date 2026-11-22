@@ -15,7 +15,7 @@
 | Images | `expo-image` (added 22 Nov, approved) | Shows Figma PNG and SVG files (Metro `assetExts` includes `svg`) |
 | Web preview | `react-dom`, `react-native-web`, `@expo/metro-runtime` (added 22 Nov, approved) | Dev only: lets Claude preview screens in a browser. Real testing = Expo Go / APK |
 | API | One **Vercel** function `api/api/scan.ts` (its own project in `api/`, own package.json) | Holds the AI key. Local test without Vercel: `cd api && npm run dev` |
-| Vision AI | **Claude** `claude-opus-5-5` via Anthropic API (`@anthropic-ai/sdk`), structured JSON output | Chosen 22 Nov. Needs an Anthropic **API** key (console.anthropic.com) — a Claude Pro subscription can't be used by an app. Gemini can be added later behind `SCAN_MODEL` |
+| Vision AI | **Gemini** `gemini-4-hydrogen` (free tier, REST + JSON schema) — default. **Claude** `claude-opus-5-5` kept as option (`SCAN_PROVIDER=claude`) | Switched 22 Nov: Gemini key is free. Claude needs an Anthropic API key with credit (a Claude Pro subscription can't be used by an app). Compare both on the 15 test photos if time allows |
 | Build | **EAS Build** → APK (`preview` profile) | Upload APK to GitHub Releases |
 | Coding help | Claude Code, Claude Pro, Cursor | List all in README |
 
@@ -69,22 +69,22 @@ Response:
 ### Prompt rules for the vision model
 - JSON only: enforced with `output_config.format` (a JSON schema). `id` is an enum of our food ids, so the AI cannot invent foods.
 - Never give medical or dose advice (the app does all explaining).
-- No `temperature`: current Claude models reject it. `effort: "low"` keeps it fast and cheap.
+- Gemini: `generationConfig.responseJsonSchema` forces the JSON shape. Claude: `output_config.format`, no `temperature` (current Claude models reject it), `effort: "low"`.
 - The API cleans the answer (`cleanAnswer`): unknown ids dropped, counts rounded to 1–10, duplicates merged.
-- If a safety check declines a photo, the API retries on a fallback model (`fallbacks: "default"`).
+- Claude only: if a safety check declines a photo, the API retries on a fallback model (`fallbacks: "default"`).
 - Food list for the AI is generated from `lib/foods.ts`: run `cd api && npm run sync-foods` after changing foods (a test fails if you forget).
 
 ## Env vars
-- API (Vercel env vars, or `api/.env.local` for local tests): `ANTHROPIC_API_KEY`, optional `SCAN_MODEL`. See `api/.env.example`.
+- API (Vercel env vars, or `api/.env.local` for local tests): `GEMINI_API_KEY`; optional `SCAN_MODEL`, `SCAN_PROVIDER=claude` + `ANTHROPIC_API_KEY`. See `api/.env.example`.
 - App (`.env.local` in the root): `EXPO_PUBLIC_SCAN_URL` = the API address. See `.env.example`.
 - Both `.env.local` files are git-ignored. Never commit a key.
 
-## Try a real scan (needs your Anthropic API key)
-1. console.anthropic.com → add a few dollars of credit → create an API key.
+## Try a real scan (needs your Gemini key — free)
+1. aistudio.google.com → "Get API key" → copy it.
 2. Copy `api/.env.example` to `api/.env.local` and paste the key there.
 3. `cd api && npm run dev` (API on port 3001).
 4. Root `.env.local`: `EXPO_PUBLIC_SCAN_URL=http://<laptop Wi-Fi IP>:3001/api/scan` (phone and laptop on the same Wi-Fi), then restart `npx expo start`.
-5. Deploy later: `cd api && npx vercel`, add `ANTHROPIC_API_KEY` in Vercel → Settings → Environment Variables, and point `EXPO_PUBLIC_SCAN_URL` at `https://<project>.vercel.app/api/scan`.
+5. Deploy later: `cd api && npx vercel`, add `GEMINI_API_KEY` in Vercel → Settings → Environment Variables, and point `EXPO_PUBLIC_SCAN_URL` at `https://<project>.vercel.app/api/scan`.
 
 ## Setup checklist
 1. Node LTS, `npm i -g eas-cli vercel`
