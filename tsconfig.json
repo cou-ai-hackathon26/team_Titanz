@@ -1,10 +1,12 @@
 {
   "extends": "expo/tsconfig.base",
   "compilerOptions": {
-    "strict": true
+    "strict": true,
+    "allowImportingTsExtensions": true
   },
   "exclude": [
     "node_modules",
-    "dev/tests"
+    "dev/tests",
+    "api"
   ]
 }

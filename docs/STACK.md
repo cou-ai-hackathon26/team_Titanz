@@ -4,7 +4,7 @@
 | Layer | Tool | Notes |
 |---|---|---|
 | App | React Native + **Expo** (TypeScript), **Expo Router** | Run with Expo Go during dev |
-| Photos | `expo-image-picker` | Camera + gallery. Resize to ~1024px, JPEG quality 0.7 before upload |
+| Photos | `expo-camera` (live camera, screen 05), `expo-image-picker` (gallery), `expo-image-manipulator` (resize) | Added 22 Nov (approved). Photos are shrunk to 1024px wide, JPEG 0.7 (`lib/photo.ts`) |
 | Chart | `react-native-svg` | Hand-drawn path for the curve + safe-zone band (simpler than a chart lib) |
 | Storage | `@react-native-async-storage/async-storage` | Risk result, logs, history. No login, no DB |
 | Notifications | `expo-notifications` (local only) | NICE feature N2 |
@@ -14,8 +14,8 @@
 | Icons | Material Symbols Rounded, **subset font** in `assets/fonts/` (from Google Fonts, 34 icons, 12 KB) | Add icons: regenerate the subset + add the code in `components/Icon.tsx` |
 | Images | `expo-image` (added 22 Nov, approved) | Shows Figma PNG and SVG files (Metro `assetExts` includes `svg`) |
 | Web preview | `react-dom`, `react-native-web`, `@expo/metro-runtime` (added 22 Nov, approved) | Dev only: lets Claude preview screens in a browser. Real testing = Expo Go / APK |
-| API | One **Vercel** serverless function `api/scan.ts` (Node) | Holds the AI key |
-| Vision AI | **Gemini** (vision, JSON mode) or **Claude** (vision) | Test both on our photos, keep the best. Record the result for judges |
+| API | One **Vercel** function `api/api/scan.ts` (its own project in `api/`, own package.json) | Holds the AI key. Local test without Vercel: `cd api && npm run dev` |
+| Vision AI | **Claude** `claude-opus-5-5` via Anthropic API (`@anthropic-ai/sdk`), structured JSON output | Chosen 22 Nov. Needs an Anthropic **API** key (console.anthropic.com) — a Claude Pro subscription can't be used by an app. Gemini can be added later behind `SCAN_MODEL` |
 | Build | **EAS Build** → APK (`preview` profile) | Upload APK to GitHub Releases |
 | Coding help | Claude Code, Claude Pro, Cursor | List all in README |
 
@@ -67,14 +67,24 @@ Response:
 - On error return `{ "error": "..." }` with a 4xx/5xx; the app shows a manual food picker.
 
 ### Prompt rules for the vision model
-- Return JSON only, matching the schema. No prose.
-- Pick ids only from the provided list.
+- JSON only: enforced with `output_config.format` (a JSON schema). `id` is an enum of our food ids, so the AI cannot invent foods.
 - Never give medical or dose advice (the app does all explaining).
-- Keep `temperature` low (0–0.2) for stable results.
+- No `temperature`: current Claude models reject it. `effort: "low"` keeps it fast and cheap.
+- The API cleans the answer (`cleanAnswer`): unknown ids dropped, counts rounded to 1–10, duplicates merged.
+- If a safety check declines a photo, the API retries on a fallback model (`fallbacks: "default"`).
+- Food list for the AI is generated from `lib/foods.ts`: run `cd api && npm run sync-foods` after changing foods (a test fails if you forget).
 
-## Env vars (Vercel only)
-`GEMINI_API_KEY` and/or `ANTHROPIC_API_KEY`, `SCAN_MODEL` (which one to use).
-The app only knows the API URL: `EXPO_PUBLIC_SCAN_URL`.
+## Env vars
+- API (Vercel env vars, or `api/.env.local` for local tests): `ANTHROPIC_API_KEY`, optional `SCAN_MODEL`. See `api/.env.example`.
+- App (`.env.local` in the root): `EXPO_PUBLIC_SCAN_URL` = the API address. See `.env.example`.
+- Both `.env.local` files are git-ignored. Never commit a key.
+
+## Try a real scan (needs your Anthropic API key)
+1. console.anthropic.com → add a few dollars of credit → create an API key.
+2. Copy `api/.env.example` to `api/.env.local` and paste the key there.
+3. `cd api && npm run dev` (API on port 3001).
+4. Root `.env.local`: `EXPO_PUBLIC_SCAN_URL=http://<laptop Wi-Fi IP>:3001/api/scan` (phone and laptop on the same Wi-Fi), then restart `npx expo start`.
+5. Deploy later: `cd api && npx vercel`, add `ANTHROPIC_API_KEY` in Vercel → Settings → Environment Variables, and point `EXPO_PUBLIC_SCAN_URL` at `https://<project>.vercel.app/api/scan`.
 
 ## Setup checklist
 1. Node LTS, `npm i -g eas-cli vercel`

@@ -9,11 +9,11 @@ Format: `- YYYY-MM-DD HH:MM · who · what changed · next step`
 | M1 Onboarding | ✅ done (web preview tested; check on phone) |
 | M2 Risk quiz | ✅ done (web preview tested; check on phone) |
 | M3 Risk result | ✅ done (web preview tested; check on phone) |
-| M4 Meal scan | ⬜ todo |
+| M4 Meal scan | 🟨 built; real AI not tested yet (needs Anthropic API key) |
 | M5 Sugar forecast | ⬜ todo |
 | M6 Pre-iftar check | ⬜ todo |
-| API /api/scan | ⬜ todo |
-| foods.ts data | ⬜ todo |
+| API /api/scan | 🟨 built + tested without key; not deployed |
+| foods.ts data | ✅ 34 foods from build report (portion weights still estimates) |
 | dar.ts scoring | ✅ done (official IDF-DAR 2021 Table 2, 7 tests pass: `npm test`) |
 | APK build | ⬜ todo |
 | README + demo video | ⬜ todo |
@@ -43,3 +43,4 @@ Format: `- YYYY-MM-DD HH:MM · who · what changed · next step`
 - 2026-11-22 · Claude · M2 Risk quiz + M3 Risk result: lib/dar.ts (all 14 IDF-DAR elements, exact points, Bangla wording), quick quiz of 8 (+pregnancy for women; treatment options filtered by About-you answer), gauge drawn from score, band advice, reasons, share report, disclaimer. Our additions marked in code: 'don't know' HbA1c/tablet/insulin = highest points in that group. Home is a placeholder · Next: lib/foods.ts + scan API (M4)
 - 2026-11-22 · Claude · Quiz fixes from Nadim's test: answers now least→most risk (unaware hypo was listed first and misread), clearer wording; kidney asks 'has a doctor said…' with 'don't know' (0 pts + 'get tested' chip); 70+ option hidden if age < 70; 9 tests pass · Next: food table + scan (M4)
 - 2026-11-22 · Claude · Medicine question worded per About-you answer ('which tablet?' / 'which insulin?' + hints for several pills or pills+insulin); 'other' answer now 'মেটফরমিন বা অন্য ট্যাবলেট'. Checked: tablets → 4 tablet answers; diet only → question skipped (7 questions)
+- 2026-11-22 · Claude · M4 Meal scan: lib/foods.ts (34 foods), lib/meal.ts (carbs, GL, bands), api/api/scan.ts (Claude vision, JSON schema with food-id enum, answer cleaning, fallback, errors), local dev server, camera screen (live camera, flash, flip, gallery, permission screen), result screen (AI foods, unsure '?', −/+ 0–3, add/replace by hand, totals, carb bar). 17 tests pass. Tested in web preview with no key: error path + manual add + totals + forecast hand-off. Forecast is a placeholder · Next: Nadim adds API key and tests 15 real photos; then M5 forecast
