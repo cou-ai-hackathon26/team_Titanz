@@ -8,7 +8,7 @@ import Button from '../components/Button';
 import Icon from '../components/Icon';
 import Input from '../components/Input';
 import { loadProfile, saveReading, Profile } from '../lib/storage';
-import { parseReading, adviceFor, HELPLINE, HYPO_BELOW, ReadingAdvice } from '../lib/hypo';
+import { parseReading, adviceFor, HELPLINE, HYPO_BELOW, HYPER_ABOVE, ReadingAdvice } from '../lib/hypo';
 import { toBanglaDigits } from '../lib/bangla';
 import { colors, fonts, radius } from '../theme/tokens';
 
@@ -31,10 +31,20 @@ const ADVICE: Record<ReadingAdvice, { color: string; soft: string; text: (v: str
     soft: colors.riskModerateSoft,
     text: (v) => `সুগার ${v}। লক্ষণ থাকলে ১৫ মিনিট পর আবার মাপুন। ${toBanglaDigits(HYPO_BELOW)}-এর নিচে নামলে রোজা ভাঙুন।`,
   },
-  'not-low': {
+  ok: {
     color: colors.riskLow,
     soft: colors.riskLowSoft,
-    text: (v) => `সুগার কম নয় (${v})। তবু খারাপ লাগলে চিকিৎসকের সাথে যোগাযোগ করুন।`,
+    text: (v) => `সুগার স্বাভাবিক (${v})। তবু খারাপ লাগলে চিকিৎসকের সাথে যোগাযোগ করুন।`,
+  },
+  high: {
+    color: colors.riskModerate,
+    soft: colors.riskModerateSoft,
+    text: (v) => `সুগার বেশি (${v})। পানি পান করুন, কিছুক্ষণ পর আবার মাপুন। ${toBanglaDigits(HYPER_ABOVE)}-এর বেশি হলে রোজা ভাঙুন।`,
+  },
+  'very-high': {
+    color: colors.riskHigh,
+    soft: colors.riskHighSoft,
+    text: (v) => `সুগার অনেক বেশি (${v})। এখনই রোজা ভাঙুন, পানি পান করুন এবং চিকিৎসকের সাথে যোগাযোগ করুন।`,
   },
 };
 
@@ -55,6 +65,11 @@ export default function EmergencyScreen() {
 
   // Opens the phone's dialer with the health helpline.
   async function callHelpline() {
+    if (Platform.OS === 'web') {
+      // A computer cannot place a phone call; on the phone app this opens the dialer.
+      setNotice(`এখান থেকে কল করা যায় না। ফোন থেকে ${toBanglaDigits(HELPLINE)} নম্বরে কল করুন।`);
+      return;
+    }
     try {
       await Linking.openURL(`tel:${HELPLINE}`);
     } catch {
@@ -70,6 +85,11 @@ export default function EmergencyScreen() {
     }
     const who = profile.name ? profile.name : 'আমি';
     const message = `${who}: আমার সুগার কমে যেতে পারে, এখনই আমার কাছে আসুন। (Roza-Safe)`;
+    if (Platform.OS === 'web') {
+      // A computer has no SMS app; on the phone app this opens Messages with the text ready.
+      setNotice(`এখান থেকে মেসেজ পাঠানো যায় না। ফোন থেকে +৮৮০ ${toBanglaDigits(profile.familyPhone)} নম্বরে জানান।`);
+      return;
+    }
     const joiner = Platform.OS === 'ios' ? '&' : '?';
     try {
       await Linking.openURL(`sms:+880${profile.familyPhone}${joiner}body=${encodeURIComponent(message)}`);
@@ -114,7 +134,7 @@ export default function EmergencyScreen() {
 
         {result ? (
           <View style={[styles.resultBox, { backgroundColor: ADVICE[result.advice].soft }]} accessibilityLiveRegion="polite">
-            <Icon name={result.advice === 'not-low' ? 'check' : 'warning'} size={22} color={ADVICE[result.advice].color} />
+            <Icon name={result.advice === 'ok' ? 'check' : 'warning'} size={22} color={ADVICE[result.advice].color} />
             <Text style={styles.resultText}>{ADVICE[result.advice].text(toBanglaDigits(result.value.toFixed(1)))}</Text>
           </View>
         ) : null}
@@ -143,8 +163,6 @@ export default function EmergencyScreen() {
           <Text style={styles.faithText}>অসুস্থতায় রোজা ভাঙার অনুমতি আছে — জীবন রক্ষা আগে।</Text>
         </View>
 
-        {notice ? <Text style={styles.notice}>{notice}</Text> : null}
-
         <View style={styles.disclaimer}>
           <Icon name="info" size={14} color={colors.textSecondary} />
           <Text style={styles.disclaimerText}>স্ক্রিনিং সহায়তা, চিকিৎসকের বিকল্প নয় · Screening support only</Text>
@@ -152,6 +170,11 @@ export default function EmergencyScreen() {
       </ScrollView>
 
       <View style={[styles.bottom, { paddingBottom: Math.max(16, insets.bottom + 12) }]}>
+        {notice ? (
+          <Text style={styles.notice} accessibilityLiveRegion="polite">
+            {notice}
+          </Text>
+        ) : null}
         <Button label={`জরুরি কল · ${toBanglaDigits(HELPLINE)}`} sub="Call health helpline" icon="call" variant="Danger" onPress={callHelpline} />
         <Button
           label="পরিবারকে জানান"

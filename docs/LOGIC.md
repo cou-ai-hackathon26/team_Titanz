@@ -78,3 +78,4 @@ Risk elements (one quiz question each, roughly): diabetes type, duration, hypogl
   2. If below 3.9 mmol/L (70 mg/dL): break the fast now with sugary drink or 3 dates, as per guidelines.
   3. Recheck in 15 minutes; if still low or feeling worse, get medical help.
 - "I feel normal" → reassurance + reminder to check sugar if unsure.
+- Logged reading (lib/hypo.ts, IDF-DAR 2021 "break the fast" rule): below 3.9 → break the fast now (red); 3.9–5.5 → recheck in 15 min (amber); 5.6–10 → ok (green); 10.1–16.7 → high, drink water and recheck (amber); **above 16.7 mmol/L (300 mg/dL) → break the fast now and contact a doctor (red)**. No medicine or insulin advice.

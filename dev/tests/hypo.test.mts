@@ -14,11 +14,16 @@ test('Readings: Bangla or English digits, comma or dot; nonsense is rejected', (
   assert.equal(parseReading('70'), null); // mg/dL typed by mistake
 });
 
-test('Advice: below 3.9 break the fast; 3.9–5.5 recheck; above is not low', () => {
+test('Advice follows IDF-DAR: break the fast below 3.9 or above 16.7', () => {
   assert.equal(adviceFor(3.8), 'break-fast');
   assert.equal(adviceFor(3.9), 'recheck');
   assert.equal(adviceFor(5.5), 'recheck');
-  assert.equal(adviceFor(5.6), 'not-low');
+  assert.equal(adviceFor(5.6), 'ok');
+  assert.equal(adviceFor(10), 'ok');
+  assert.equal(adviceFor(10.1), 'high');
+  assert.equal(adviceFor(16.7), 'high');
+  assert.equal(adviceFor(16.8), 'very-high');
+  assert.equal(adviceFor(33), 'very-high');
 });
 
 test('Minutes to iftar', () => {
