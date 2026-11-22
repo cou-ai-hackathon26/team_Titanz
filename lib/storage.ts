@@ -71,3 +71,32 @@ export async function loadRisk(): Promise<RiskRecord | null> {
     return null;
   }
 }
+
+// One saved iftar plan (from the forecast screen). Used later by the History screen.
+export type MealPlan = {
+  date: string; // ISO date-time
+  items: { foodId: string; count: number }[]; // the plate after the user's changes
+  walk15: boolean;
+  peakNow: number; // estimated peak of the plate as scanned (mmol/L)
+  peakAfter: number; // estimated peak with the changes (mmol/L)
+};
+
+const MEALS_KEY = 'roza-safe/meals';
+const MAX_MEALS = 60; // about two Ramadans of iftars; older ones are dropped
+
+// Adds a plan to the saved list (newest first).
+export async function saveMealPlan(plan: MealPlan): Promise<void> {
+  const list = await loadMealPlans();
+  await AsyncStorage.setItem(MEALS_KEY, JSON.stringify([plan, ...list].slice(0, MAX_MEALS)));
+}
+
+// Reads the saved plans (newest first). Empty list if none or broken.
+export async function loadMealPlans(): Promise<MealPlan[]> {
+  try {
+    const raw = await AsyncStorage.getItem(MEALS_KEY);
+    const list = raw ? JSON.parse(raw) : [];
+    return Array.isArray(list) ? list : [];
+  } catch {
+    return [];
+  }
+}
