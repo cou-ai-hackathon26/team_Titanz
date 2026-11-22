@@ -87,6 +87,7 @@ export async function askGemini(key: string, imageBase64: string, systemPrompt: 
     if (res.status === 400 && /api key/i.test(reason)) throw new ScanError(500, 'Server Gemini key is wrong');
     if (res.status === 401 || res.status === 403) throw new ScanError(500, 'Server Gemini key is not allowed to use this model');
     if (res.status === 404) throw new ScanError(500, `Gemini model "${model}" not found (set SCAN_MODEL)`);
+    if (res.status === 429 && /per day/i.test(reason)) throw new ScanError(429, 'Daily free AI limit used up');
     if (res.status === 429) throw new ScanError(429, 'Too many scans right now (free-tier limit), try again in a minute');
     throw new ScanError(502, `Gemini error ${res.status}${reason ? `: ${reason.slice(0, 120)}` : ''}`);
   }

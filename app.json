@@ -23,7 +23,6 @@
         "expo-image-picker",
         {
           "photosPermission": "Roza-Safe lets you pick a photo of your iftar plate from your gallery.",
-          "cameraPermission": false,
           "microphonePermission": false
         }
       ]
@@ -36,7 +35,12 @@
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
-      "permissions": []
+      "permissions": [],
+      "blockedPermissions": [
+        "android.permission.SYSTEM_ALERT_WINDOW",
+        "android.permission.WRITE_EXTERNAL_STORAGE",
+        "android.permission.RECORD_AUDIO"
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png"

@@ -57,6 +57,9 @@ export async function scanPlate(base64Jpeg: string): Promise<ScanResult> {
       signal: controller.signal,
     });
     const body = await res.json().catch(() => ({}));
+    if (res.status === 429 && /daily/i.test(body?.error ?? '')) {
+      throw new Error('আজকের ফ্রি AI স্ক্যান শেষ। খাবারগুলো নিজে যোগ করুন — হিসাব একই রকম কাজ করবে।');
+    }
     if (res.status === 503 || res.status === 429) throw new Error('AI এখন ব্যস্ত। এক মিনিট পর আবার ছবি তুলুন, অথবা খাবারগুলো নিজে যোগ করুন।');
     if (!res.ok) throw new Error(`ছবি পড়া যায়নি (${res.status})। খাবারগুলো নিজে যোগ করুন।`);
     if (!Array.isArray(body.items) || !Array.isArray(body.unknown)) throw new Error('সার্ভারের উত্তর বোঝা যায়নি।');
