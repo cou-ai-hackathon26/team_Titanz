@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { View, Text, TextInput, Pressable, StyleSheet, KeyboardTypeOptions } from 'react-native';
+import { View, TextInput, Pressable, StyleSheet, KeyboardTypeOptions } from 'react-native';
+import Text from './Txt'; // <Text> that draws Bangla digits clearly
 import Icon, { IconName } from './Icon';
 import { colors, fonts, radius } from '../theme/tokens';
 
@@ -15,11 +16,12 @@ type Props = {
   maxLength?: number;
   onPress?: () => void; // if set, the field is a dropdown: tapping opens a list instead of typing
   onBlur?: () => void; // called when the user leaves the field
+  digitsOnly?: boolean; // number fields (age, phone): draw digits with the clear digit font
 };
 
 // Figma "Input": label on top, white field below. Green 2px border while typing (focused).
 export default function Input(props: Props) {
-  const { label, value, placeholder, onChangeText, prefix, suffixText, suffixIcon, keyboardType, maxLength, onPress, onBlur } = props;
+  const { label, value, placeholder, onChangeText, prefix, suffixText, suffixIcon, keyboardType, maxLength, onPress, onBlur, digitsOnly } = props;
   const [focused, setFocused] = useState(false);
 
   // The inside of the field: prefix, the text (or text box), then the suffix.
@@ -32,7 +34,7 @@ export default function Input(props: Props) {
         </Text>
       ) : (
         <TextInput
-          style={styles.input}
+          style={[styles.input, digitsOnly ? { fontFamily: fonts.digitsMedium } : null]}
           value={value}
           onChangeText={onChangeText}
           placeholder={placeholder}

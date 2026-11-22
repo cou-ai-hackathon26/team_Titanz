@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, StyleSheet } from 'react-native';
+import Text from '../components/Txt'; // <Text> that draws Bangla digits clearly
 import { router } from 'expo-router';
 import SetupLayout from '../components/SetupLayout';
 import Input from '../components/Input';
@@ -62,6 +63,7 @@ export default function IftarScreen() {
 
   return (
     <SetupLayout
+      backTo="/about-you"
       step={2}
       totalSteps={2}
       title="ইফতারের সময় ও জরুরি যোগাযোগ"
@@ -91,6 +93,7 @@ export default function IftarScreen() {
           prefix="🇧🇩 +880"
           placeholder="১৮১৯ ২৩৪ ৫৬৭"
           keyboardType="phone-pad"
+          digitsOnly
           maxLength={13}
           onBlur={() => setPhoneTouched(true)}
         />

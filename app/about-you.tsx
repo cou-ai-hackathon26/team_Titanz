@@ -39,6 +39,7 @@ export default function AboutYouScreen() {
 
   return (
     <SetupLayout
+      backTo="/guide/3"
       step={1}
       totalSteps={2}
       title="আপনার সম্পর্কে বলুন"
@@ -50,8 +51,9 @@ export default function AboutYouScreen() {
         label="বয়স"
         value={toBanglaDigits(ageDigits)}
         onChangeText={(t) => setAgeDigits(onlyDigits(t).slice(0, 3))}
-        placeholder="যেমন: ৫৮"
+        placeholder="৫৮"
         suffixText="বছর"
+        digitsOnly
         keyboardType="number-pad"
         maxLength={3}
       />

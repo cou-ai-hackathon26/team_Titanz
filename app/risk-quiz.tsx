@@ -1,5 +1,6 @@
-import { View, Text, StyleSheet } from 'react-native';
-import { router } from 'expo-router';
+import { View, StyleSheet } from 'react-native';
+import Text from '../components/Txt'; // <Text> that draws Bangla digits clearly
+import { goBack } from '../lib/nav';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Button from '../components/Button';
 import { colors, fonts } from '../theme/tokens';
@@ -12,7 +13,7 @@ export default function RiskQuizPlaceholder() {
         <Text style={styles.title}>ঝুঁকি যাচাই</Text>
         <Text style={styles.body}>এই অংশটি পরের ধাপে তৈরি হবে। (Risk quiz: coming next)</Text>
       </View>
-      <Button label="ফিরে যান" sub="Back" variant="Secondary" onPress={() => router.back()} />
+      <Button label="ফিরে যান" sub="Back" variant="Secondary" onPress={() => goBack('/iftar')} />
     </SafeAreaView>
   );
 }

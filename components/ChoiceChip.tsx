@@ -1,4 +1,5 @@
-import { Pressable, Text, StyleSheet } from 'react-native';
+import { Pressable, StyleSheet } from 'react-native';
+import Text from './Txt'; // <Text> that draws Bangla digits clearly
 import Icon from './Icon';
 import { colors, fonts, radius } from '../theme/tokens';
 

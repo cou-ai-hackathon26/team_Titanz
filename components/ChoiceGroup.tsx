@@ -1,4 +1,5 @@
-import { View, Text, StyleSheet } from 'react-native';
+import { View, StyleSheet } from 'react-native';
+import Text from './Txt'; // <Text> that draws Bangla digits clearly
 import ChoiceChip from './ChoiceChip';
 import { colors, fonts } from '../theme/tokens';
 

@@ -29,6 +29,10 @@ export default function RootLayout() {
     Inter_600SemiBold,
     Inter_700Bold,
     MaterialSymbolsRounded: require('../assets/fonts/MaterialSymbolsRounded.ttf'),
+    BanglaDigits_400Regular: require('../assets/fonts/BanglaDigits_400Regular.ttf'),
+    BanglaDigits_500Medium: require('../assets/fonts/BanglaDigits_500Medium.ttf'),
+    BanglaDigits_600SemiBold: require('../assets/fonts/BanglaDigits_600SemiBold.ttf'),
+    BanglaDigits_700Bold: require('../assets/fonts/BanglaDigits_700Bold.ttf'),
   });
   const ready = fontsLoaded || !!fontError; // if a font fails, still open the app with system fonts
 

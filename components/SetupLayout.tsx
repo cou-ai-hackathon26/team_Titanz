@@ -1,6 +1,8 @@
 import { ReactNode } from 'react';
-import { View, Text, StyleSheet, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
-import { router } from 'expo-router';
+import { View, StyleSheet, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
+import Text from './Txt'; // <Text> that draws Bangla digits clearly
+import { Href } from 'expo-router';
+import { goBack } from '../lib/nav';
 import { StatusBar } from 'expo-status-bar';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import BackButton from './BackButton';
@@ -15,11 +17,12 @@ type Props = {
   subtitle: string;
   children: ReactNode; // the form fields
   bottom: ReactNode; // the button pinned at the bottom
+  backTo: Href; // where the back arrow goes if there is no previous screen
 };
 
 // Shared frame for the setup screens (00g, 00h): back button, "ধাপ x / ২", progress bar,
 // title, scrolling form, and a button pinned to the bottom that stays above the keyboard.
-export default function SetupLayout({ step, totalSteps, title, subtitle, children, bottom }: Props) {
+export default function SetupLayout({ step, totalSteps, title, subtitle, children, bottom, backTo }: Props) {
   const insets = useSafeAreaInsets();
   return (
     <KeyboardAvoidingView style={styles.screen} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
@@ -30,7 +33,7 @@ export default function SetupLayout({ step, totalSteps, title, subtitle, childre
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.topBar}>
-          <BackButton onPress={() => router.back()} />
+          <BackButton onPress={() => goBack(backTo)} />
           <Text style={styles.stepText}>
             ধাপ {toBanglaDigits(step)} / {toBanglaDigits(totalSteps)}
           </Text>

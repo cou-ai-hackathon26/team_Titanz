@@ -1,9 +1,11 @@
-import { View, Text, StyleSheet, Pressable, ScrollView, useWindowDimensions } from 'react-native';
+import { View, StyleSheet, Pressable, ScrollView, useWindowDimensions } from 'react-native';
+import Text from '../../components/Txt'; // <Text> that draws Bangla digits clearly
 import { router, useLocalSearchParams } from 'expo-router';
 import { Image } from 'expo-image';
 import { StatusBar } from 'expo-status-bar';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Button from '../../components/Button';
+import { goBack } from '../../lib/nav';
 import BackButton from '../../components/BackButton';
 import StepBar from '../../components/StepBar';
 import Icon, { IconName } from '../../components/Icon';
@@ -102,7 +104,7 @@ export default function GuideScreen() {
     <View style={[styles.screen, { paddingTop: insets.top + 10 }]}>
       <StatusBar style="dark" />
       <View style={styles.topBar}>
-        <BackButton size={40} onPress={() => router.back()} />
+        <BackButton size={40} onPress={() => goBack(index === 0 ? '/' : `/guide/${index}`)} />
         <StepBar total={3} done={index + 1} />
         <Pressable onPress={() => router.push('/about-you')} accessibilityRole="button" hitSlop={10}>
           <Text style={styles.skip}>এড়িয়ে যান</Text>

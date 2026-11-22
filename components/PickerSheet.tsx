@@ -1,4 +1,5 @@
-import { Modal, View, Text, Pressable, ScrollView, StyleSheet } from 'react-native';
+import { Modal, View, Pressable, ScrollView, StyleSheet } from 'react-native';
+import Text from './Txt'; // <Text> that draws Bangla digits clearly
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Icon from './Icon';
 import { colors, fonts, radius } from '../theme/tokens';

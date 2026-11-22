@@ -44,6 +44,11 @@ export const fonts = {
   englishSemiBold: 'Inter_600SemiBold',
   englishBold: 'Inter_700Bold',
   icons: 'MaterialSymbolsRounded',
+  // Bangla digits ০–৯ only (Noto Sans Bengali). Used automatically by <Txt>; Hind Siliguri's "১" is hard to read.
+  digits: 'BanglaDigits_400Regular',
+  digitsMedium: 'BanglaDigits_500Medium',
+  digitsSemiBold: 'BanglaDigits_600SemiBold',
+  digitsBold: 'BanglaDigits_700Bold',
 };
 
 // Soft card / chip shadow from Figma (0 8 24 rgba(15,36,26,0.12)).
