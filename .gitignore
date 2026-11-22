@@ -1,0 +1,12 @@
+node_modules/
+.expo/
+.env*
+!.env.example
+.vercel/
+dist/
+*.apk
+.DS_Store
+expo-env.d.ts
+*.tsbuildinfo
+/ios
+/android
