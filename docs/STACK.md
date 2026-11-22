@@ -9,7 +9,10 @@
 | Storage | `@react-native-async-storage/async-storage` | Risk result, logs, history. No login, no DB |
 | Notifications | `expo-notifications` (local only) | NICE feature N2 |
 | Speech | `expo-speech` | NICE feature N5 |
-| Fonts | `@expo-google-fonts/hind-siliguri`, `@expo-google-fonts/inter` | |
+| Fonts | `@expo-google-fonts/hind-siliguri`, `@expo-google-fonts/inter` | Import each weight from its own subpath (e.g. `/400Regular`) so only used files ship |
+| Icons | Material Symbols Rounded, **subset font** in `assets/fonts/` (from Google Fonts, 34 icons, 12 KB) | Add icons: regenerate the subset + add the code in `components/Icon.tsx` |
+| Images | `expo-image` (added 22 Nov, approved) | Shows Figma PNG and SVG files (Metro `assetExts` includes `svg`) |
+| Web preview | `react-dom`, `react-native-web`, `@expo/metro-runtime` (added 22 Nov, approved) | Dev only: lets Claude preview screens in a browser. Real testing = Expo Go / APK |
 | API | One **Vercel** serverless function `api/scan.ts` (Node) | Holds the AI key |
 | Vision AI | **Gemini** (vision, JSON mode) or **Claude** (vision) | Test both on our photos, keep the best. Record the result for judges |
 | Build | **EAS Build** → APK (`preview` profile) | Upload APK to GitHub Releases |

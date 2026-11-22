@@ -6,7 +6,7 @@ Format: `- YYYY-MM-DD HH:MM · who · what changed · next step`
 ## Status board
 | Feature | Status |
 |---|---|
-| M1 Onboarding | ⬜ todo |
+| M1 Onboarding | ✅ done (web preview tested; check on phone) |
 | M2 Risk quiz | ⬜ todo |
 | M3 Risk result | ⬜ todo |
 | M4 Meal scan | ⬜ todo |
@@ -38,3 +38,4 @@ Format: `- YYYY-MM-DD HH:MM · who · what changed · next step`
 - 2026-11-21 · Claude · Wrote AI image prompts for Welcome + 3 guides (famous BD mosques, calm daylight, brand greens) in design/illustration-prompts.md · Next: Nadim generates images, Claude places them in Figma
 - 2026-11-21 · Claude · Guide 3 image prompt reworked: balance scale (mizan) instead of a chart; backup iftar-table prompt added
 - 2026-11-22 09:10 · Claude · Decided no sign-in (00e/00f not built, PRODUCT.md updated). Expo app created (TypeScript, Expo Router, Hind Siliguri + Inter fonts), theme/tokens.ts from Figma, temporary start screen; tsc + Android bundle pass · Next: git init + first commit, then lib/dar.ts + Risk quiz (M2) + Risk result (M3)
+- 2026-11-22 · Claude · M1 Onboarding built from Figma: Welcome, Guide 1–3, About you, Iftar & contact (district picker, real sehri/iftar times from sun maths, +880 number check, reminder toggle). Components: Button, Input, ChoiceChip, Toggle, BackButton, StepBar, PickerSheet, Icon. Profile saved on phone only. Risk quiz is a placeholder · Next: lib/dar.ts + Risk quiz (M2) + Risk result (M3)

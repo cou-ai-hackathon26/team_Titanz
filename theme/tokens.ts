@@ -15,7 +15,7 @@ export const colors = {
   textSecondary: '#6B726C', // sub-labels, English lines
   textBrand: '#046C4B', // green text, links
   textOnBrand: '#FFFFFF', // text on dark green
-  borderDefault: '#DEDEDC', // card and button borders
+  borderDefault: '#DEDEDC', // card and button borders (also "neutral-300")
   borderBrand: '#046C4B', // selected answer border
   riskLow: '#258267',
   riskLowSoft: '#E3F2E6',
@@ -29,13 +29,28 @@ export const colors = {
 export const radius = {
   card: 24,
   tile: 20,
+  input: 16,
   pill: 999,
 };
 
 // Font family names, loaded in app/_layout.tsx.
 export const fonts = {
   bangla: 'HindSiliguri_400Regular',
+  banglaMedium: 'HindSiliguri_500Medium',
+  banglaSemiBold: 'HindSiliguri_600SemiBold',
   banglaBold: 'HindSiliguri_700Bold',
   english: 'Inter_400Regular',
+  englishMedium: 'Inter_500Medium',
+  englishSemiBold: 'Inter_600SemiBold',
   englishBold: 'Inter_700Bold',
+  icons: 'MaterialSymbolsRounded',
+};
+
+// Soft card / chip shadow from Figma (0 8 24 rgba(15,36,26,0.12)).
+export const softShadow = {
+  shadowColor: '#0F241A',
+  shadowOffset: { width: 0, height: 8 },
+  shadowOpacity: 0.12,
+  shadowRadius: 24,
+  elevation: 6,
 };
