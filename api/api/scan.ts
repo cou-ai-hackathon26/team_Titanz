@@ -76,6 +76,12 @@ export function OPTIONS(): Response {
   return new Response(null, { status: 204, headers: CORS_HEADERS });
 }
 
+// Opening the address in a browser: say the server is running (never shows any key).
+export function GET(): Response {
+  const hasKey = Boolean(process.env.GEMINI_API_KEY || process.env.ANTHROPIC_API_KEY);
+  return json({ ok: true, service: 'Roza-Safe scan server', aiKeySet: hasKey, howToUse: 'The app sends photos here with POST.' });
+}
+
 type ScanItem = { id: string; count: number; confidence: number };
 
 // Cleans Claude's answer: keeps only known ids, whole counts 1–10, confidence 0–1, one row per food.
