@@ -9,10 +9,11 @@ import Button from '../components/Button';
 import Icon from '../components/Icon';
 import Stepper from '../components/Stepper';
 import PickerSheet from '../components/PickerSheet';
+import CarbScale from '../components/CarbScale';
 import { getScan, setScanItems } from '../lib/scanStore';
 import { scanPlate, LOW_CONFIDENCE } from '../lib/scanApi';
 import { FOODS, FOOD_BY_ID, unitBn } from '../lib/foods';
-import { mealTotals, foodImpact, CarbBand, MealItem, CARB_BANDS } from '../lib/meal';
+import { mealTotals, foodImpact, CarbBand, MealItem } from '../lib/meal';
 import { toBanglaDigits } from '../lib/bangla';
 import { colors, fonts, radius } from '../theme/tokens';
 
@@ -154,27 +155,7 @@ export default function ScanResultScreen() {
                 </View>
               </View>
 
-              <View style={styles.load}>
-                <View style={styles.loadHead}>
-                  <Text style={styles.loadTitle}>শর্করার মাত্রা</Text>
-                  <View style={[styles.bandChip, { backgroundColor: look.soft }]}>
-                    <Text style={[styles.bandChipText, { color: look.strong }]}>{look.chip}</Text>
-                  </View>
-                </View>
-                <View style={styles.loadBar}>
-                  {(['low', 'moderate', 'high'] as CarbBand[]).map((b) => (
-                    <View
-                      key={b}
-                      style={[styles.loadPart, { flex: b === 'moderate' ? 0.7 : 1, backgroundColor: b === totals.band ? bandColor[b].strong : bandColor[b].soft }]}
-                    />
-                  ))}
-                </View>
-                <View style={styles.loadLabels}>
-                  <Text style={styles.loadLabel}>কম {'<'} {bn(CARB_BANDS.lowBelow)}g</Text>
-                  <Text style={styles.loadLabel}>মাঝারি {bn(CARB_BANDS.lowBelow)}–{bn(CARB_BANDS.highAbove)}g</Text>
-                  <Text style={styles.loadLabel}>বেশি {'>'} {bn(CARB_BANDS.highAbove)}g</Text>
-                </View>
-              </View>
+              {hasFood ? <CarbScale carbs={totals.carbs} band={totals.band} /> : null}
 
               <View style={styles.listHead}>
                 <Text style={styles.listTitle}>খাবারগুলো</Text>
@@ -291,15 +272,6 @@ const styles = StyleSheet.create({
   tileUnit: { fontFamily: fonts.english, fontSize: 13, lineHeight: 16, color: colors.textSecondary },
   tileUnitBn: { fontFamily: fonts.bangla, fontSize: 13, lineHeight: 18, color: colors.textSecondary },
   dot: { width: 8, height: 8, borderRadius: 4 },
-  load: { gap: 8 },
-  loadHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  loadTitle: { fontFamily: fonts.banglaSemiBold, fontSize: 15, lineHeight: 20, color: colors.textPrimary },
-  bandChip: { borderRadius: radius.pill, paddingHorizontal: 12, paddingVertical: 6 },
-  bandChipText: { fontFamily: fonts.banglaSemiBold, fontSize: 12, lineHeight: 16 },
-  loadBar: { flexDirection: 'row', gap: 4, height: 10 },
-  loadPart: { height: 10, borderRadius: 5 },
-  loadLabels: { flexDirection: 'row', justifyContent: 'space-between' },
-  loadLabel: { fontFamily: fonts.bangla, fontSize: 12, lineHeight: 16, color: colors.textSecondary },
   listHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   listTitle: { fontFamily: fonts.banglaBold, fontSize: 18, lineHeight: 24, color: colors.textPrimary },
   listHint: { fontFamily: fonts.bangla, fontSize: 13, lineHeight: 18, color: colors.textSecondary },
