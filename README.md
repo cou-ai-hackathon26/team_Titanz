@@ -15,13 +15,17 @@ Photo → vision AI (foods + counts as JSON) → our food table → glycemic loa
 Risk check uses the IDF-DAR (2021) Ramadan risk score.
 
 ## AI tools, models and APIs used
-| Tool | Used for |
+| Tool / model / API | Used for |
 |---|---|
-| _e.g. Gemini … / Claude … (model name)_ | Meal photo recognition in `api/scan.ts` |
-| Claude Code / Claude Pro | Coding assistant |
-| Cursor | Coding assistant |
-| Google Stitch | UI design |
-| _add every other tool here_ | |
+| Google Gemini API — `gemini-4-hydrogen` (free tier) | Reads the iftar photo: which foods and how many (`api/api/scan.ts`, `api/providers/gemini.ts`) |
+| Anthropic Claude API — `claude-opus-5-5` | Backup photo reader, only if every Gemini key is out of quota (`api/providers/claude.ts`) |
+| Claude Code (Claude Opus 5.5) | Coding assistant: wrote most of the app code with the team, tests, docs |
+| Figma + Figma MCP | UI design; Claude Code read the Figma screens to build matching layouts |
+| Cursor | Coding assistant / editor |
+| Google Stitch | UI design ideas |
+| _image AI used for the guide pictures — fill in_ | Onboarding guide images |
+
+All sugar numbers come from our own maths (`lib/forecast.ts`, `lib/meal.ts`, `lib/dar.ts`), not from AI.
 
 ## Accuracy test
 Tested on _N_ real Bangladeshi iftar photos: _X/N_ plates fully correct, _Y/N_ with one wrong item. Notes: _…_
