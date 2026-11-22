@@ -38,11 +38,12 @@ export async function askGeminiWithBackups(imageBase64: string, systemPrompt: st
   const keys = geminiKeys();
   if (keys.length === 0) throw new ScanError(500, 'Server has no GEMINI_API_KEY set');
   let lastError: unknown = null;
-  for (const key of keys) {
+  for (const [i, key] of keys.entries()) {
     try {
       return await askGemini(key, imageBase64, systemPrompt, schema, question);
     } catch (error) {
       lastError = error;
+      console.error(`Gemini key ${i + 1} of ${keys.length} failed:`, error instanceof Error ? error.message : error); // never logs the key
       if (!keyProblem(error)) throw error; // not about the key: another key will not help
     }
   }
@@ -82,6 +83,7 @@ export async function askGemini(key: string, imageBase64: string, systemPrompt: 
   const body = await res.json().catch(() => ({}));
   if (!res.ok) {
     const reason: string = body?.error?.message ?? '';
+    console.error(`Gemini ${res.status}: ${reason.replace(/\s+/g, " ").slice(0, 700)}`); // Google's reason, for the Vercel logs
     if (res.status === 400 && /api key/i.test(reason)) throw new ScanError(500, 'Server Gemini key is wrong');
     if (res.status === 401 || res.status === 403) throw new ScanError(500, 'Server Gemini key is not allowed to use this model');
     if (res.status === 404) throw new ScanError(500, `Gemini model "${model}" not found (set SCAN_MODEL)`);
