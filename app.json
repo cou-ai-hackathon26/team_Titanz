@@ -25,6 +25,12 @@
           "photosPermission": "Roza-Safe lets you pick a photo of your iftar plate from your gallery.",
           "microphonePermission": false
         }
+      ],
+      [
+        "expo-notifications",
+        {
+          "color": "#0B4A33"
+        }
       ]
     ],
     "android": {

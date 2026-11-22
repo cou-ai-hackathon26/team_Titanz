@@ -22,3 +22,11 @@ test('Dates', () => {
   assert.ok(!sameDay(new Date(2026, 10, 22), new Date(2026, 10, 23)));
   assert.equal(shortDate(new Date(2026, 10, 22)), '২২/১১');
 });
+
+test('reminderTime is 1 hour before iftar on that day', async () => {
+  const { reminderTime } = await import('../../lib/time.ts');
+  const at = reminderTime(new Date(2027, 1, 10, 9, 30), 18 * 60 + 5); // iftar 6:05 PM
+  assert.equal(at.getDate(), 10);
+  assert.equal(at.getHours(), 17);
+  assert.equal(at.getMinutes(), 5);
+});

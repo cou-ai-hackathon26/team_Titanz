@@ -12,6 +12,7 @@ import PickerSheet from '../components/PickerSheet';
 import { loadProfile, saveProfile } from '../lib/storage';
 import { districts, findDistrict, fastTimes, formatClock } from '../lib/places';
 import { isValidPhone, formatPhone, cleanPhoneInput, phoneProblem } from '../lib/phone';
+import { askReminderPermission, refreshReminders } from '../lib/reminders';
 import { colors, fonts, radius } from '../theme/tokens';
 
 // Screen 00h · Iftar & contact (setup step 2 of 2): district (for sehri/iftar times),
@@ -23,6 +24,7 @@ export default function IftarScreen() {
   const [districtId, setDistrictId] = useState<string | null>(null);
   const [phone, setPhone] = useState(''); // 10 digits after +880
   const [reminder, setReminder] = useState(true);
+  const [reminderNote, setReminderNote] = useState(''); // shown if the phone blocks notifications
   const [pickerOpen, setPickerOpen] = useState(false);
 
   // Fill in anything the user already saved.
@@ -45,9 +47,20 @@ export default function IftarScreen() {
     setPhone(cleanPhoneInput(text));
   }
 
+  // Turning the reminder on asks the phone for notification permission straight away.
+  async function onReminderChange(on: boolean) {
+    setReminderNote('');
+    if (!on) return setReminder(false);
+    const allowed = await askReminderPermission();
+    setReminder(allowed);
+    if (!allowed) setReminderNote('ফোনের সেটিংসে রোজা-সেফের নোটিফিকেশন চালু করুন, তারপর আবার চেষ্টা করুন।');
+  }
+
   // Save everything, mark setup as done, and start the risk check.
   async function finish() {
-    await saveProfile({ districtId, familyPhone: phone, reminder, onboarded: true });
+    const allowed = reminder ? await askReminderPermission() : false;
+    await saveProfile({ districtId, familyPhone: phone, reminder: reminder && allowed, onboarded: true });
+    await refreshReminders(); // schedule (or cancel) the pre-iftar notifications
     if (editing) goBack('/settings');
     else router.push('/risk-quiz');
   }
@@ -104,8 +117,9 @@ export default function IftarScreen() {
       <View style={styles.reminder}>
         <Icon name="notifications" size={22} />
         <Text style={styles.reminderText}>ইফতারের ১ ঘণ্টা আগে শরীর চেক করার কথা মনে করিয়ে দিন</Text>
-        <Toggle value={reminder} onChange={setReminder} label="ইফতারের আগে মনে করিয়ে দিন" />
+        <Toggle value={reminder} onChange={onReminderChange} label="ইফতারের আগে মনে করিয়ে দিন" />
       </View>
+      {reminderNote ? <Text style={[styles.help, styles.error]}>{reminderNote}</Text> : null}
 
       <PickerSheet
         visible={pickerOpen}

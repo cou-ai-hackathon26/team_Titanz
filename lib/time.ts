@@ -34,3 +34,10 @@ export function sameDay(a: Date, b: Date): boolean {
 export function shortDate(d: Date): string {
   return `${toBanglaDigits(d.getDate())}/${toBanglaDigits(d.getMonth() + 1)}`;
 }
+
+// When the pre-iftar reminder goes off on a given day: 1 hour before iftar (iftarMinutes = minutes after midnight).
+export function reminderTime(day: Date, iftarMinutes: number, minutesBefore = 60): Date {
+  const at = new Date(day.getFullYear(), day.getMonth(), day.getDate(), 0, 0, 0, 0);
+  at.setMinutes(iftarMinutes - minutesBefore);
+  return at;
+}

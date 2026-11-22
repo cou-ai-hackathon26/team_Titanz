@@ -1,5 +1,7 @@
 import { useEffect } from 'react';
-import { Stack } from 'expo-router';
+import { Platform } from 'react-native';
+import { Stack, router } from 'expo-router';
+import * as Notifications from 'expo-notifications';
 import * as SplashScreen from 'expo-splash-screen';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { useFonts } from 'expo-font';
@@ -13,6 +15,7 @@ import { Inter_500Medium } from '@expo-google-fonts/inter/500Medium';
 import { Inter_600SemiBold } from '@expo-google-fonts/inter/600SemiBold';
 import { Inter_700Bold } from '@expo-google-fonts/inter/700Bold';
 import { colors } from '../theme/tokens';
+import { refreshReminders } from '../lib/reminders';
 
 // Keep the splash screen up until fonts are ready.
 SplashScreen.preventAutoHideAsync();
@@ -39,6 +42,18 @@ export default function RootLayout() {
   // Hide the splash screen once fonts have loaded (or failed).
   useEffect(() => {
     if (ready) SplashScreen.hideAsync();
+  }, [ready]);
+
+  // Reminders: keep the next 14 days scheduled, and open the Check screen when one is tapped.
+  useEffect(() => {
+    if (!ready || Platform.OS === 'web') return;
+    refreshReminders().catch(() => {}); // never block the app if scheduling fails
+    const openFrom = (response: Notifications.NotificationResponse | null) => {
+      if (response?.notification.request.content.data?.open === '/check') router.push('/check');
+    };
+    openFrom(Notifications.getLastNotificationResponse()); // app was closed and opened by the tap
+    const sub = Notifications.addNotificationResponseReceivedListener(openFrom); // app was already open
+    return () => sub.remove();
   }, [ready]);
 
   if (!ready) return null;
