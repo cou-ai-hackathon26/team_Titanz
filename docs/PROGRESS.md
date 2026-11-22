@@ -6,6 +6,8 @@ Format: `- YYYY-MM-DD HH:MM · who · what changed · next step`
 ## Status board
 | Feature | Status |
 |---|---|
+| N1 Home + bottom nav | ✅ done (web preview) |
+| N4 History | 🟨 simple list of saved plans + readings (Figma weekly chart not yet) |
 | M1 Onboarding | ✅ done (web preview tested; check on phone) |
 | M2 Risk quiz | ✅ done (web preview tested; check on phone) |
 | M3 Risk result | ✅ done (web preview tested; check on phone) |
@@ -50,3 +52,4 @@ Format: `- YYYY-MM-DD HH:MM · who · what changed · next step`
 - 2026-11-22 · Claude · M5 Sugar forecast: lib/forecast.ts (build-report model, every constant cited; 8 tests incl. report's worked examples to 2 decimals), ForecastChart (safe band, now vs after curves, peak dots), screen 07 with 3 what-ifs (eat less of the plate's biggest-GL food, add chola, 15-min walk) each showing its real mmol effect; peak shown as ±15% range; save plan to phone. Chola can RAISE the peak when fibre+protein is already at the 30% cap (shown honestly in amber). Bottom nav left out until Home/History/Check exist. Baseline fixed at 5.5 (no reading input yet) · Next: M6 pre-iftar check
 - 2026-11-22 · Claude · M6 Pre-iftar check + Emergency steps: symptom tiles, live iftar countdown from district, 'I feel normal' turned off when a symptom is ticked, emergency screen with the 3 IDF-DAR steps always shown, log a reading (<3.9 → break the fast; 3.9–5.5 recheck), call 16263, SMS family (opens SMS app, user presses Send). lib/hypo.ts + 3 tests (31 total). No dose advice anywhere · Next: Home screen (N1) + bottom nav, then APK
 - 2026-11-22 · Claude · Fix (Nadim's test): 33 mmol/L showed green. Added IDF-DAR high rule: >16.7 break the fast (red), 10.1–16.7 high (amber). Call/SMS buttons now explain on web instead of doing nothing; message shown above the buttons. LOGIC.md updated
+- 2026-11-22 · Claude · N1 Home + bottom nav: real iftar/sehri countdown + day ring, last sugar with status chip (tap to log; dangerous reading → emergency with the value shown), this week's dots from saved plans, pre-iftar card; bell opens reminder setting (N2 not built). Bottom nav on Home/Forecast/History (scan button opens camera). Simple History list. App opens on Home after setup. Shared ReadingSheet + lib/time.ts (3 tests, 34 total). Avatar = name initial (not the Figma stock photo); week strip says 'এই সপ্তাহ' (not Ramadan yet) · Next: APK build

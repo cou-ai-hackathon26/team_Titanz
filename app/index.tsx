@@ -1,16 +1,27 @@
+import { useEffect, useState } from 'react';
 import { View, StyleSheet } from 'react-native';
 import Text from '../components/Txt'; // <Text> that draws Bangla digits clearly
-import { router } from 'expo-router';
+import { router, Redirect } from 'expo-router';
 import { Image } from 'expo-image';
 import { StatusBar } from 'expo-status-bar';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Defs, LinearGradient, Stop, Rect } from 'react-native-svg';
 import Button from '../components/Button';
 import { colors, fonts } from '../theme/tokens';
+import { loadProfile } from '../lib/storage';
 
 // Screen 00a · Welcome: full mosque photo, app name, title and "Get started" button.
+// If setup is already done, the app opens straight on Home.
 export default function WelcomeScreen() {
   const insets = useSafeAreaInsets();
+  const [onboarded, setOnboarded] = useState<boolean | null>(null); // null = still checking
+
+  useEffect(() => {
+    loadProfile().then((p) => setOnboarded(p.onboarded));
+  }, []);
+
+  if (onboarded === null) return <View style={styles.screen} />;
+  if (onboarded) return <Redirect href="/home" />;
 
   return (
     <View style={styles.screen}>

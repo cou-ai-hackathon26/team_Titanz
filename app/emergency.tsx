@@ -1,14 +1,14 @@
 import { useEffect, useState } from 'react';
-import { View, StyleSheet, ScrollView, Pressable, Linking, Platform, Modal } from 'react-native';
-import { router } from 'expo-router';
+import { View, StyleSheet, ScrollView, Pressable, Linking, Platform } from 'react-native';
+import { router, useLocalSearchParams } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Text from '../components/Txt'; // <Text> that draws Bangla digits clearly
 import Button from '../components/Button';
 import Icon from '../components/Icon';
-import Input from '../components/Input';
-import { loadProfile, saveReading, Profile } from '../lib/storage';
-import { parseReading, adviceFor, HELPLINE, HYPO_BELOW, HYPER_ABOVE, ReadingAdvice } from '../lib/hypo';
+import ReadingSheet from '../components/ReadingSheet';
+import { loadProfile, Profile } from '../lib/storage';
+import { adviceFor, HELPLINE, HYPO_BELOW, HYPER_ABOVE, ReadingAdvice } from '../lib/hypo';
 import { toBanglaDigits } from '../lib/bangla';
 import { colors, fonts, radius } from '../theme/tokens';
 
@@ -53,15 +53,17 @@ export default function EmergencyScreen() {
   const insets = useSafeAreaInsets();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [logOpen, setLogOpen] = useState(false);
-  const [typed, setTyped] = useState('');
-  const [result, setResult] = useState<{ advice: ReadingAdvice; value: number } | null>(null);
+  // A reading passed from Home (e.g. 3.0) is shown straight away.
+  const { reading } = useLocalSearchParams<{ reading?: string }>();
+  const passed = reading !== undefined && Number.isFinite(Number(reading)) ? Number(reading) : null;
+  const [result, setResult] = useState<{ advice: ReadingAdvice; value: number } | null>(
+    passed !== null ? { advice: adviceFor(passed), value: passed } : null,
+  );
   const [notice, setNotice] = useState(''); // shown if the phone cannot open the dialer / SMS app
 
   useEffect(() => {
     loadProfile().then(setProfile);
   }, []);
-
-  const reading = parseReading(typed);
 
   // Opens the phone's dialer with the health helpline.
   async function callHelpline() {
@@ -98,13 +100,10 @@ export default function EmergencyScreen() {
     }
   }
 
-  // Saves the typed reading and shows what to do next.
-  async function saveTypedReading() {
-    if (reading === null) return;
-    await saveReading({ value: reading, date: new Date().toISOString(), when: 'emergency' });
-    setResult({ advice: adviceFor(reading), value: reading });
+  // Shows what to do next after a reading was saved.
+  function onReadingSaved(value: number) {
+    setResult({ advice: adviceFor(value), value });
     setLogOpen(false);
-    setTyped('');
   }
 
   const hasFamily = !!profile?.familyPhone;
@@ -185,18 +184,7 @@ export default function EmergencyScreen() {
         />
       </View>
 
-      {/* Small sheet to type a glucometer reading */}
-      <Modal visible={logOpen} transparent animationType="slide" onRequestClose={() => setLogOpen(false)}>
-        <Pressable style={styles.backdrop} onPress={() => setLogOpen(false)} accessibilityLabel="বন্ধ করুন (Close)" />
-        <View style={[styles.sheet, { paddingBottom: insets.bottom + 16 }]}>
-          <Text style={styles.sheetTitle}>গ্লুকোমিটারের মাপ</Text>
-          <Input label="সুগার (mmol/L)" value={typed} onChangeText={setTyped} placeholder="যেমন ৩.৫" keyboardType="decimal-pad" maxLength={5} digitsOnly />
-          {typed !== '' && reading === null ? (
-            <Text style={styles.sheetError}>১ থেকে ৩৩ এর মধ্যে mmol/L লিখুন (যেমন ৩.৫)। mg/dL হলে ১৮ দিয়ে ভাগ করুন।</Text>
-          ) : null}
-          <Button label="সেভ করুন" sub="Save" onPress={saveTypedReading} disabled={reading === null} />
-        </View>
-      </Modal>
+      <ReadingSheet visible={logOpen} when="emergency" onClose={() => setLogOpen(false)} onSaved={onReadingSaved} />
     </View>
   );
 }
@@ -231,8 +219,4 @@ const styles = StyleSheet.create({
   disclaimer: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingVertical: 4 },
   disclaimerText: { fontFamily: fonts.bangla, fontSize: 12, lineHeight: 16, color: colors.textSecondary },
   bottom: { gap: 10, paddingTop: 12, paddingHorizontal: 20, backgroundColor: colors.bgApp },
-  backdrop: { flex: 1, backgroundColor: 'rgba(16,35,26,0.4)' },
-  sheet: { backgroundColor: colors.bgSurface, borderTopLeftRadius: radius.card, borderTopRightRadius: radius.card, padding: 20, gap: 14 },
-  sheetTitle: { fontFamily: fonts.banglaBold, fontSize: 20, lineHeight: 28, color: colors.textPrimary },
-  sheetError: { fontFamily: fonts.bangla, fontSize: 13, lineHeight: 18, color: colors.riskHigh },
 });

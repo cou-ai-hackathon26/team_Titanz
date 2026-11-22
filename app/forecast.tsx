@@ -10,6 +10,7 @@ import Icon, { IconName } from '../components/Icon';
 import Stepper from '../components/Stepper';
 import Toggle from '../components/Toggle';
 import ForecastChart from '../components/ForecastChart';
+import BottomNav, { NAV_HEIGHT } from '../components/BottomNav';
 import { goBack } from '../lib/nav';
 import { getScan } from '../lib/scanStore';
 import { saveMealPlan } from '../lib/storage';
@@ -53,7 +54,8 @@ export default function ForecastScreen() {
       <View style={[styles.screen, styles.empty, { paddingTop: insets.top + 24 }]}>
         <Text style={styles.emptyTitle}>আগে প্লেট স্ক্যান করুন</Text>
         <Text style={styles.emptyBody}>পূর্বাভাস দেখাতে ইফতারের খাবারগুলো জানা দরকার।</Text>
-        <Button label="প্লেট স্ক্যান করুন" sub="Scan plate" icon="photo_camera" onPress={() => router.replace('/scan')} style={styles.emptyButton} />
+        <Button label="প্লেট স্ক্যান করুন" sub="Scan plate" icon="photo_camera" onPress={() => router.push('/scan')} style={styles.emptyButton} />
+        <BottomNav active="forecast" />
       </View>
     );
   }
@@ -82,7 +84,7 @@ export default function ForecastScreen() {
   return (
     <View style={styles.screen}>
       <StatusBar style="dark" />
-      <ScrollView contentContainerStyle={[styles.content, { paddingTop: insets.top + 8, paddingBottom: insets.bottom + 24 }]}>
+      <ScrollView contentContainerStyle={[styles.content, { paddingTop: insets.top + 8, paddingBottom: NAV_HEIGHT + insets.bottom + 24 }]}>
         <View style={styles.topBar}>
           <BackButton onPress={() => goBack('/scan-result')} />
           <Text style={styles.topTitle}>সুগার পূর্বাভাস</Text>
@@ -154,6 +156,7 @@ export default function ForecastScreen() {
           <Text style={styles.disclaimerText}>স্ক্রিনিং সহায়তা, চিকিৎসকের বিকল্প নয় · Screening support only</Text>
         </View>
       </ScrollView>
+      <BottomNav active="forecast" />
     </View>
   );
 }
