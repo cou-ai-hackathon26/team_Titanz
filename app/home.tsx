@@ -5,7 +5,7 @@ import Text from '../components/Txt'; // <Text> that draws Bangla digits clearly
 import Button from '../components/Button';
 import { colors, fonts } from '../theme/tokens';
 
-// TEMPORARY placeholder for screen 04 · Home. For now it only opens the meal scan and the risk check.
+// TEMPORARY placeholder for screen 04 · Home. For now it opens the meal scan, the pre-iftar check and the risk check.
 export default function HomePlaceholder() {
   return (
     <SafeAreaView style={styles.screen}>
@@ -15,6 +15,7 @@ export default function HomePlaceholder() {
       </View>
       <View style={styles.actions}>
         <Button label="ইফতারের প্লেট স্ক্যান করুন" sub="Scan iftar plate" icon="photo_camera" onPress={() => router.push('/scan')} />
+        <Button label="ইফতারের আগে শরীর চেক" sub="Pre-iftar check" icon="health_and_safety" variant="Secondary" onPress={() => router.push('/check')} />
         <Button label="আবার ঝুঁকি যাচাই" sub="Redo risk check" variant="Secondary" onPress={() => router.push('/risk-quiz')} />
       </View>
     </SafeAreaView>

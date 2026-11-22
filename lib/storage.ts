@@ -100,3 +100,26 @@ export async function loadMealPlans(): Promise<MealPlan[]> {
     return [];
   }
 }
+
+// One blood sugar reading the user typed in (mmol/L).
+export type Reading = { value: number; date: string; when: 'pre-iftar' | 'emergency' | 'other' };
+
+const READINGS_KEY = 'roza-safe/readings';
+const MAX_READINGS = 200;
+
+// Adds a reading (newest first).
+export async function saveReading(reading: Reading): Promise<void> {
+  const list = await loadReadings();
+  await AsyncStorage.setItem(READINGS_KEY, JSON.stringify([reading, ...list].slice(0, MAX_READINGS)));
+}
+
+// Reads saved readings (newest first). Empty list if none or broken.
+export async function loadReadings(): Promise<Reading[]> {
+  try {
+    const raw = await AsyncStorage.getItem(READINGS_KEY);
+    const list = raw ? JSON.parse(raw) : [];
+    return Array.isArray(list) ? list : [];
+  } catch {
+    return [];
+  }
+}

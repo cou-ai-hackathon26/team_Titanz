@@ -11,7 +11,7 @@ Format: `- YYYY-MM-DD HH:MM · who · what changed · next step`
 | M3 Risk result | ✅ done (web preview tested; check on phone) |
 | M4 Meal scan | ✅ works with real Gemini (local server); 15-photo accuracy test still to do |
 | M5 Sugar forecast | ✅ done (web preview, real scan → forecast → save) |
-| M6 Pre-iftar check | ⬜ todo |
+| M6 Pre-iftar check | ✅ done (web preview; call/SMS buttons need a phone test) |
 | API /api/scan | 🟨 built + tested without key; not deployed |
 | foods.ts data | ✅ 34 foods from build report (portion weights still estimates) |
 | dar.ts scoring | ✅ done (official IDF-DAR 2021 Table 2, 7 tests pass: `npm test`) |
@@ -48,3 +48,4 @@ Format: `- YYYY-MM-DD HH:MM · who · what changed · next step`
 - 2026-11-22 · Claude · First real Gemini scans (Figma iftar photo): after stricter counting rules, 3 of 3 runs gave jilapi 3, beguni 4, chola 1; piyaju/pakora mix-up and dates 5–6 vary (user fixes in app). Stepper max 3→10 (AI found 5 dates). Retry on Gemini 503 'busy' (seen once), app timeout 75 s, Bangla 'AI busy' message. 20 tests pass · Next: team tests 15 real photos (write X/15 in README), then M5 forecast
 - 2026-11-22 · Claude · Carb level bar now readable (Nadim's feedback): marker bubble with the plate's grams at its exact place, sections sized by grams (0–45–75–150+), one plain sentence per level; hidden on an empty plate. Checked 18/54/90/180 g in preview
 - 2026-11-22 · Claude · M5 Sugar forecast: lib/forecast.ts (build-report model, every constant cited; 8 tests incl. report's worked examples to 2 decimals), ForecastChart (safe band, now vs after curves, peak dots), screen 07 with 3 what-ifs (eat less of the plate's biggest-GL food, add chola, 15-min walk) each showing its real mmol effect; peak shown as ±15% range; save plan to phone. Chola can RAISE the peak when fibre+protein is already at the 30% cap (shown honestly in amber). Bottom nav left out until Home/History/Check exist. Baseline fixed at 5.5 (no reading input yet) · Next: M6 pre-iftar check
+- 2026-11-22 · Claude · M6 Pre-iftar check + Emergency steps: symptom tiles, live iftar countdown from district, 'I feel normal' turned off when a symptom is ticked, emergency screen with the 3 IDF-DAR steps always shown, log a reading (<3.9 → break the fast; 3.9–5.5 recheck), call 16263, SMS family (opens SMS app, user presses Send). lib/hypo.ts + 3 tests (31 total). No dose advice anywhere · Next: Home screen (N1) + bottom nav, then APK
