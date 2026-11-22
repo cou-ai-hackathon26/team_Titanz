@@ -12,3 +12,12 @@ test('Phone numbers: typed with 0, +880 or Bangla digits all work', () => {
   assert.ok(!isValidPhone('181923456'));
   assert.equal(formatPhone('1819234567'), '১৮১৯ ২৩৪ ৫৬৭');
 });
+
+test('phoneProblem explains what is wrong', async () => {
+  const { phoneProblem } = await import('../../lib/phone.ts');
+  assert.equal(phoneProblem(''), null);
+  assert.equal(phoneProblem('1819234567'), null);
+  assert.match(phoneProblem('464649464')!, /১ দিয়ে শুরু/);
+  assert.match(phoneProblem('1219234567')!, /বাংলাদেশের মোবাইল নম্বর নয়/);
+  assert.match(phoneProblem('18192')!, /আরও ৫টি সংখ্যা/);
+});

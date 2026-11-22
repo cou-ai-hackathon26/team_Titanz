@@ -19,3 +19,11 @@ export function cleanPhoneInput(text: string): string {
   if (digits.startsWith('0')) digits = digits.slice(1);
   return digits.slice(0, 10);
 }
+
+// Says in plain Bangla what is wrong with the number, or null if it is fine (empty is fine: it is optional).
+export function phoneProblem(digits: string): string | null {
+  if (digits === '' || isValidPhone(digits)) return null;
+  if (digits[0] !== '1') return 'মোবাইল নম্বর ১ দিয়ে শুরু হয় (যেমন ১৮১৯ ২৩৪ ৫৬৭)। নম্বর না দিতে চাইলে বক্স খালি রাখুন।';
+  if (digits.length >= 2 && !/[3-9]/.test(digits[1])) return 'এটি বাংলাদেশের মোবাইল নম্বর নয় (০১৩ থেকে ০১৯ দিয়ে শুরু হয়)।';
+  return `আরও ${toBanglaDigits(String(10 - digits.length))}টি সংখ্যা লিখুন, অথবা বক্স খালি রাখুন।`;
+}

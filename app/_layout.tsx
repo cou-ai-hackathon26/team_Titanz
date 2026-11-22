@@ -13,7 +13,6 @@ import { Inter_500Medium } from '@expo-google-fonts/inter/500Medium';
 import { Inter_600SemiBold } from '@expo-google-fonts/inter/600SemiBold';
 import { Inter_700Bold } from '@expo-google-fonts/inter/700Bold';
 import { colors } from '../theme/tokens';
-import { screenAnimation } from '../lib/nav';
 
 // Keep the splash screen up until fonts are ready.
 SplashScreen.preventAutoHideAsync();
@@ -47,11 +46,11 @@ export default function RootLayout() {
   return (
     <SafeAreaProvider>
       <Stack
-        screenOptions={({ route }) => ({
+        screenOptions={{
           headerShown: false,
           contentStyle: { backgroundColor: colors.bgApp },
-          animation: screenAnimation(route.name), // tabs to the left slide in from the left
-        })}
+          animation: 'slide_from_right',
+        }}
       />
     </SafeAreaProvider>
   );

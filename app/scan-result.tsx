@@ -95,7 +95,7 @@ export default function ScanResultScreen() {
   // Saves the plate and opens the sugar forecast.
   function openForecast() {
     setScanItems(items);
-    router.push('/forecast');
+    router.navigate('/forecast'); // switch to the Forecast tab (closes camera + result screens)
   }
 
   const pickerOptions = FOODS.map((f) => ({ id: f.id, label: `${f.nameBn} · ${f.nameEn}` }));

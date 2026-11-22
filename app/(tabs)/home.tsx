@@ -4,17 +4,16 @@ import { router, useFocusEffect } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Circle } from 'react-native-svg';
-import Text from '../components/Txt'; // <Text> that draws Bangla digits clearly
-import Icon from '../components/Icon';
-import BottomNav, { NAV_HEIGHT } from '../components/BottomNav';
-import ReadingSheet from '../components/ReadingSheet';
-import { loadProfile, loadReadings, loadMealPlans, Profile, Reading, MealPlan } from '../lib/storage';
-import { findDistrict, fastTimes, formatClock, District } from '../lib/places';
-import { adviceFor } from '../lib/hypo';
-import { FORECAST } from '../lib/forecast';
-import { dayPart, hoursAndMinutes, minutesOfDay, sameDay, shortDate, WEEKDAYS_BN } from '../lib/time';
-import { toBanglaDigits } from '../lib/bangla';
-import { colors, fonts, radius } from '../theme/tokens';
+import Text from '../../components/Txt'; // <Text> that draws Bangla digits clearly
+import Icon from '../../components/Icon';
+import ReadingSheet from '../../components/ReadingSheet';
+import { loadProfile, loadReadings, loadMealPlans, Profile, Reading, MealPlan } from '../../lib/storage';
+import { findDistrict, fastTimes, formatClock, District } from '../../lib/places';
+import { adviceFor } from '../../lib/hypo';
+import { FORECAST } from '../../lib/forecast';
+import { dayPart, hoursAndMinutes, minutesOfDay, sameDay, shortDate, WEEKDAYS_BN } from '../../lib/time';
+import { toBanglaDigits } from '../../lib/bangla';
+import { colors, fonts, radius } from '../../theme/tokens';
 
 // What the big lime card shows: time left to iftar during the fast, or to sehri after iftar.
 function fastStatus(district: District, now: Date) {
@@ -121,7 +120,7 @@ export default function HomeScreen() {
   return (
     <View style={styles.screen}>
       <StatusBar style="dark" />
-      <ScrollView contentContainerStyle={[styles.content, { paddingTop: insets.top + 8, paddingBottom: NAV_HEIGHT + insets.bottom + 24 }]}>
+      <ScrollView contentContainerStyle={[styles.content, { paddingTop: insets.top + 8, paddingBottom: 24 }]}>
         <View style={styles.header}>
           <Pressable
             style={styles.hello}
@@ -251,8 +250,6 @@ export default function HomeScreen() {
           <Icon name="arrow_forward" size={24} color={colors.textOnBrand} />
         </Pressable>
       </ScrollView>
-
-      <BottomNav active="home" />
       <ReadingSheet visible={logOpen} when="other" onClose={() => setLogOpen(false)} onSaved={onReadingSaved} />
     </View>
   );

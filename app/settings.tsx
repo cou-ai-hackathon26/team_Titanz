@@ -15,7 +15,7 @@ import {
   Profile, RiskRecord,
 } from '../lib/storage';
 import { findDistrict } from '../lib/places';
-import { isValidPhone, formatPhone, cleanPhoneInput } from '../lib/phone';
+import { isValidPhone, formatPhone, cleanPhoneInput, phoneProblem } from '../lib/phone';
 import { scanUrl, testScanServer, builtInScanUrl } from '../lib/scanApi';
 import { backupText } from '../lib/backup';
 import { toBanglaDigits } from '../lib/bangla';
@@ -149,7 +149,7 @@ export default function SettingsScreen() {
             maxLength={13}
             digitsOnly
           />
-          {!phoneOk && phone.length === 10 ? <Text style={styles.error}>সঠিক মোবাইল নম্বর লিখুন (১০ সংখ্যা)।</Text> : null}
+          {phoneProblem(phone) ? <Text style={styles.error}>{phoneProblem(phone)}</Text> : null}
           <Text style={styles.small}>নম্বর না থাকলে "পরিবারকে জানান" ফোনের কন্টাক্টস খুলবে।</Text>
           {phoneMsg ? <Text style={styles.ok}>{phoneMsg}</Text> : null}
           {phoneChanged ? <Button label="নম্বর সেভ করুন" sub="Save number" onPress={savePhone} disabled={!phoneOk} /> : null}

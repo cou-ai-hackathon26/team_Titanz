@@ -6,18 +6,19 @@ type CurrentScan = {
   photoUri: string | null; // to show the photo on the result screen
   photoBase64: string | null; // to send to the scan API
   items: MealItem[]; // the foods on the plate (after the user's edits)
+  version: number; // goes up on every change, so the Forecast tab knows to start fresh
 };
 
-let current: CurrentScan = { photoUri: null, photoBase64: null, items: [] };
+let current: CurrentScan = { photoUri: null, photoBase64: null, items: [], version: 0 };
 
 // Starts a new scan with a fresh photo.
 export function setScanPhoto(uri: string, base64: string) {
-  current = { photoUri: uri, photoBase64: base64, items: [] };
+  current = { photoUri: uri, photoBase64: base64, items: [], version: current.version + 1 };
 }
 
 // Saves the food list (the forecast screen reads it).
 export function setScanItems(items: MealItem[]) {
-  current = { ...current, items };
+  current = { ...current, items, version: current.version + 1 };
 }
 
 // Reads the current scan.

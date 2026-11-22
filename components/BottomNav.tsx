@@ -1,49 +1,62 @@
 import { View, Pressable, StyleSheet } from 'react-native';
 import { router } from 'expo-router';
+import type { BottomTabBarProps } from 'expo-router/tabs';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Text from './Txt'; // <Text> that draws Bangla digits clearly
 import Icon, { IconName } from './Icon';
 import { colors, fonts } from '../theme/tokens';
-import { openTab, TabPath } from '../lib/nav';
 
-export type NavTab = 'home' | 'forecast' | 'history' | 'check';
+type TabItem = { route: string; icon: IconName; label: string };
 
-const TABS: { id: NavTab; icon: IconName; label: string; path: TabPath }[] = [
-  { id: 'home', icon: 'home', label: 'হোম', path: '/home' },
-  { id: 'forecast', icon: 'show_chart', label: 'পূর্বাভাস', path: '/forecast' },
-  { id: 'history', icon: 'calendar_month', label: 'ইতিহাস', path: '/history' },
-  { id: 'check', icon: 'health_and_safety', label: 'চেক', path: '/check' },
+// Left to right. Home, Forecast and History are real tabs (the bar stays, only the page changes).
+// "Check" opens the full-screen pre-iftar check on top (it has its own big buttons at the bottom).
+const LEFT: TabItem[] = [
+  { route: 'home', icon: 'home', label: 'হোম' },
+  { route: 'forecast', icon: 'show_chart', label: 'পূর্বাভাস' },
+];
+const RIGHT: TabItem[] = [
+  { route: 'history', icon: 'calendar_month', label: 'ইতিহাস' },
+  { route: 'check', icon: 'health_and_safety', label: 'চেক' },
 ];
 
-// Height of the bar without the phone's bottom inset. Screens add this as bottom padding.
-export const NAV_HEIGHT = 80;
-
 // One tab: icon, label and a dot under the active one.
-function Tab({ tab, active, from }: { tab: (typeof TABS)[number]; active: boolean; from: TabPath }) {
+function Tab({ item, active, onPress }: { item: TabItem; active: boolean; onPress: () => void }) {
   return (
     <Pressable
-      onPress={() => openTab(from, tab.path)}
+      onPress={onPress}
       accessibilityRole="tab"
-      accessibilityLabel={tab.label}
+      accessibilityLabel={item.label}
       accessibilityState={{ selected: active }}
       style={styles.tab}
       hitSlop={6}
     >
-      <Icon name={tab.icon} size={24} color={active ? colors.textPrimary : colors.textSecondary} style={active ? null : styles.dim} />
-      <Text style={[styles.label, active ? styles.labelActive : styles.dim]}>{tab.label}</Text>
+      <Icon name={item.icon} size={24} color={active ? colors.textPrimary : colors.textSecondary} style={active ? null : styles.dim} />
+      <Text style={[styles.label, active ? styles.labelActive : styles.dim]}>{item.label}</Text>
       <View style={[styles.dot, active ? styles.dotActive : null]} />
     </Pressable>
   );
 }
 
-// Figma "Bottom nav": Home · Forecast · [lime scan button] · History · Check. Stays fixed at the bottom.
-export default function BottomNav({ active }: { active: NavTab }) {
+// Figma "Bottom nav": Home · Forecast · [lime scan button] · History · Check.
+// It is the tab bar of the (tabs) group, so it never moves: tapping a tab only changes the page above it.
+export default function BottomNav({ state, navigateToTab }: BottomTabBarProps) {
   const insets = useSafeAreaInsets();
-  const from = TABS.find((t) => t.id === active)!.path; // the tab we are on now
+  const current = state.routes[state.index].name;
+
+  // Switches to a tab, or opens the Check screen on top.
+  function open(route: string) {
+    if (route === 'check') router.push('/check');
+    else if (route !== current) {
+      const target = state.routes.find((r) => r.name === route);
+      if (target) navigateToTab(target.key);
+    }
+  }
+
+  const renderTab = (item: TabItem) => <Tab key={item.route} item={item} active={item.route === current} onPress={() => open(item.route)} />;
+
   return (
     <View style={[styles.bar, { paddingBottom: Math.max(insets.bottom, 12) + 8 }]} accessibilityRole="tablist">
-      <Tab tab={TABS[0]} active={active === 'home'} from={from} />
-      <Tab tab={TABS[1]} active={active === 'forecast'} from={from} />
+      {LEFT.map(renderTab)}
       <Pressable
         onPress={() => router.push('/scan')}
         accessibilityRole="button"
@@ -52,18 +65,13 @@ export default function BottomNav({ active }: { active: NavTab }) {
       >
         <Icon name="center_focus_weak" size={30} />
       </Pressable>
-      <Tab tab={TABS[2]} active={active === 'history'} from={from} />
-      <Tab tab={TABS[3]} active={active === 'check'} from={from} />
+      {RIGHT.map(renderTab)}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   bar: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    bottom: 0,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',

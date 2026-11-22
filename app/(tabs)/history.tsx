@@ -3,16 +3,15 @@ import { View, StyleSheet, ScrollView } from 'react-native';
 import { useFocusEffect } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import Text from '../components/Txt'; // <Text> that draws Bangla digits clearly
-import BottomNav, { NAV_HEIGHT } from '../components/BottomNav';
-import { loadMealPlans, loadReadings, MealPlan, Reading } from '../lib/storage';
-import { FOOD_BY_ID } from '../lib/foods';
-import { FORECAST } from '../lib/forecast';
-import { adviceFor } from '../lib/hypo';
-import { dayPart, minutesOfDay, shortDate } from '../lib/time';
-import { formatClock } from '../lib/places';
-import { toBanglaDigits } from '../lib/bangla';
-import { colors, fonts, radius } from '../theme/tokens';
+import Text from '../../components/Txt'; // <Text> that draws Bangla digits clearly
+import { loadMealPlans, loadReadings, MealPlan, Reading } from '../../lib/storage';
+import { FOOD_BY_ID } from '../../lib/foods';
+import { FORECAST } from '../../lib/forecast';
+import { adviceFor } from '../../lib/hypo';
+import { dayPart, minutesOfDay, shortDate } from '../../lib/time';
+import { formatClock } from '../../lib/places';
+import { toBanglaDigits } from '../../lib/bangla';
+import { colors, fonts, radius } from '../../theme/tokens';
 
 // "২২/১১ · সন্ধ্যা ৬:১২ PM" for a saved item.
 function when(iso: string): string {
@@ -40,7 +39,7 @@ export default function HistoryScreen() {
   return (
     <View style={styles.screen}>
       <StatusBar style="dark" />
-      <ScrollView contentContainerStyle={[styles.content, { paddingTop: insets.top + 16, paddingBottom: NAV_HEIGHT + insets.bottom + 24 }]}>
+      <ScrollView contentContainerStyle={[styles.content, { paddingTop: insets.top + 16, paddingBottom: 24 }]}>
         <View>
           <Text style={styles.title}>ইতিহাস</Text>
           <Text style={styles.subtitle}>History</Text>
@@ -95,7 +94,6 @@ export default function HistoryScreen() {
           );
         })}
       </ScrollView>
-      <BottomNav active="history" />
     </View>
   );
 }

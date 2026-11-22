@@ -1,23 +1,22 @@
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import { View, StyleSheet, ScrollView } from 'react-native';
-import { router } from 'expo-router';
+import { router, useFocusEffect } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import Text from '../components/Txt'; // <Text> that draws Bangla digits clearly
-import Button from '../components/Button';
-import BackButton from '../components/BackButton';
-import Icon, { IconName } from '../components/Icon';
-import Stepper from '../components/Stepper';
-import Toggle from '../components/Toggle';
-import ForecastChart from '../components/ForecastChart';
-import BottomNav, { NAV_HEIGHT } from '../components/BottomNav';
-import { goBack, goHomeFresh } from '../lib/nav';
-import { getScan } from '../lib/scanStore';
-import { saveMealPlan } from '../lib/storage';
-import { FOOD_BY_ID } from '../lib/foods';
-import { forecast, forecastWith, noChanges, changedPlate, changeEffect, FORECAST, WhatIf, Zone, Forecast } from '../lib/forecast';
-import { toBanglaDigits } from '../lib/bangla';
-import { colors, fonts, radius } from '../theme/tokens';
+import Text from '../../components/Txt'; // <Text> that draws Bangla digits clearly
+import Button from '../../components/Button';
+import BackButton from '../../components/BackButton';
+import Icon, { IconName } from '../../components/Icon';
+import Stepper from '../../components/Stepper';
+import Toggle from '../../components/Toggle';
+import ForecastChart from '../../components/ForecastChart';
+import { goHomeFresh } from '../../lib/nav';
+import { getScan } from '../../lib/scanStore';
+import { saveMealPlan } from '../../lib/storage';
+import { FOOD_BY_ID } from '../../lib/foods';
+import { forecast, forecastWith, noChanges, changedPlate, changeEffect, FORECAST, WhatIf, Zone, Forecast } from '../../lib/forecast';
+import { toBanglaDigits } from '../../lib/bangla';
+import { colors, fonts, radius } from '../../theme/tokens';
 
 // One decimal in Bangla digits, e.g. 11.34 → "১১.৩".
 const bn1 = (n: number) => toBanglaDigits(n.toFixed(1));
@@ -42,7 +41,19 @@ function summary(f: Forecast): string {
 
 // Screen 07 · Sugar Forecast: 2-hour curve for the plate as scanned vs. with the user's changes,
 // plus three "what if" controls that redraw the curve instantly (no AI call: this is our own maths).
+// The Forecast tab stays open in the background, so when a new plate is saved
+// it starts fresh (new what-ifs) instead of showing the old plate.
 export default function ForecastScreen() {
+  const [version, setVersion] = useState(getScan().version);
+  useFocusEffect(
+    useCallback(() => {
+      setVersion(getScan().version);
+    }, []),
+  );
+  return <ForecastView key={version} />;
+}
+
+function ForecastView() {
   const insets = useSafeAreaInsets();
   const items = getScan().items.filter((i) => i.count > 0);
   const [whatIf, setWhatIf] = useState<WhatIf>(() => noChanges(items));
@@ -55,7 +66,6 @@ export default function ForecastScreen() {
         <Text style={styles.emptyTitle}>আগে প্লেট স্ক্যান করুন</Text>
         <Text style={styles.emptyBody}>পূর্বাভাস দেখাতে ইফতারের খাবারগুলো জানা দরকার।</Text>
         <Button label="প্লেট স্ক্যান করুন" sub="Scan plate" icon="photo_camera" onPress={() => router.push('/scan')} style={styles.emptyButton} />
-        <BottomNav active="forecast" />
       </View>
     );
   }
@@ -84,9 +94,9 @@ export default function ForecastScreen() {
   return (
     <View style={styles.screen}>
       <StatusBar style="dark" />
-      <ScrollView contentContainerStyle={[styles.content, { paddingTop: insets.top + 8, paddingBottom: NAV_HEIGHT + insets.bottom + 24 }]}>
+      <ScrollView contentContainerStyle={[styles.content, { paddingTop: insets.top + 8, paddingBottom: 24 }]}>
         <View style={styles.topBar}>
-          <BackButton onPress={() => goBack('/scan-result')} />
+          <BackButton onPress={() => router.push('/scan-result')} />
           <Text style={styles.topTitle}>সুগার পূর্বাভাস</Text>
           <View style={styles.topBarSpace} />
         </View>
@@ -156,7 +166,6 @@ export default function ForecastScreen() {
           <Text style={styles.disclaimerText}>স্ক্রিনিং সহায়তা, চিকিৎসকের বিকল্প নয় · Screening support only</Text>
         </View>
       </ScrollView>
-      <BottomNav active="forecast" />
     </View>
   );
 }

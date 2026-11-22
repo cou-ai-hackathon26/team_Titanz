@@ -11,7 +11,7 @@ import Icon, { IconName } from '../components/Icon';
 import PickerSheet from '../components/PickerSheet';
 import { loadProfile, saveProfile } from '../lib/storage';
 import { districts, findDistrict, fastTimes, formatClock } from '../lib/places';
-import { isValidPhone, formatPhone, cleanPhoneInput } from '../lib/phone';
+import { isValidPhone, formatPhone, cleanPhoneInput, phoneProblem } from '../lib/phone';
 import { colors, fonts, radius } from '../theme/tokens';
 
 // Screen 00h · Iftar & contact (setup step 2 of 2): district (for sehri/iftar times),
@@ -24,7 +24,6 @@ export default function IftarScreen() {
   const [phone, setPhone] = useState(''); // 10 digits after +880
   const [reminder, setReminder] = useState(true);
   const [pickerOpen, setPickerOpen] = useState(false);
-  const [phoneTouched, setPhoneTouched] = useState(false); // true after the user leaves the number field
 
   // Fill in anything the user already saved.
   useEffect(() => {
@@ -38,7 +37,7 @@ export default function IftarScreen() {
   const district = findDistrict(districtId);
   const times = district ? fastTimes(district) : null;
   const phoneOk = phone === '' || isValidPhone(phone); // the number is optional
-  const showPhoneError = !phoneOk && (phoneTouched || phone.length === 10); // don't nag while still typing
+  const problem = phoneProblem(phone); // plain-language reason the number is wrong (null = fine)
   const canContinue = !!district && phoneOk;
 
   // Reads the typed number (with or without 0 / +880, Bangla or English digits).
@@ -94,12 +93,11 @@ export default function IftarScreen() {
           keyboardType="phone-pad"
           digitsOnly
           maxLength={13}
-          onBlur={() => setPhoneTouched(true)}
         />
-        {!showPhoneError ? (
-          <Text style={styles.help}>জরুরি অবস্থায় এক চাপে তাঁকে জানানো যাবে</Text>
+        {problem ? (
+          <Text style={[styles.help, styles.error]}>{problem}</Text>
         ) : (
-          <Text style={[styles.help, styles.error]}>সঠিক মোবাইল নম্বর লিখুন (১০ সংখ্যা, যেমন ১৮১৯ ২৩৪ ৫৬৭)</Text>
+          <Text style={styles.help}>জরুরি অবস্থায় এক চাপে তাঁকে জানানো যাবে</Text>
         )}
       </View>
 
