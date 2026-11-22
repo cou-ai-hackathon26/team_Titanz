@@ -8,7 +8,7 @@ import Button from '../components/Button';
 import BackButton from '../components/BackButton';
 import SymptomTile from '../components/SymptomTile';
 import Icon, { IconName } from '../components/Icon';
-import { goBack } from '../lib/nav';
+import { goBack, goHomeFresh } from '../lib/nav';
 import { loadProfile } from '../lib/storage';
 import { findDistrict, fastTimes } from '../lib/places';
 import { minutesToIftar } from '../lib/hypo';
@@ -114,7 +114,7 @@ export default function PreIftarCheckScreen() {
           onPress={() => router.push({ pathname: '/emergency', params: { symptoms: picked.join(',') } })}
         />
         {feelsNormal ? (
-          <Button label="হোমে যান" sub="Go to home" variant="Secondary" onPress={() => router.replace('/home')} />
+          <Button label="হোমে যান" sub="Go to home" variant="Secondary" onPress={() => goHomeFresh()} />
         ) : (
           // With a symptom ticked, "I feel normal" makes no sense, so it is turned off.
           <Button label="না, ভালো আছি" sub="I feel normal" variant="Secondary" onPress={() => setFeelsNormal(true)} disabled={hasSymptoms} />

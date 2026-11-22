@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { View, StyleSheet, ScrollView, Pressable, Linking, Platform } from 'react-native';
+import { goHomeFresh } from '../lib/nav';
 import { router, useLocalSearchParams } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -129,7 +130,7 @@ export default function EmergencyScreen() {
       <StatusBar style="dark" />
       <ScrollView contentContainerStyle={[styles.content, { paddingTop: insets.top + 8 }]} showsVerticalScrollIndicator={false}>
         <View style={styles.topBar}>
-          <Pressable onPress={() => router.replace('/home')} accessibilityRole="button" accessibilityLabel="বন্ধ করুন (Close)" hitSlop={8} style={styles.roundButton}>
+          <Pressable onPress={() => goHomeFresh()} accessibilityRole="button" accessibilityLabel="বন্ধ করুন (Close)" hitSlop={8} style={styles.roundButton}>
             <Icon name="close" size={22} />
           </Pressable>
           <View style={styles.urgentChip}>

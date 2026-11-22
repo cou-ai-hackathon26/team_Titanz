@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { View, StyleSheet, ScrollView, Pressable, Share } from 'react-native';
+import { goHomeFresh } from '../lib/nav';
 import { router } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -95,7 +96,7 @@ export default function RiskResultScreen() {
     }
   }
 
-  const goHome = () => router.replace('/home');
+  const goHome = () => goHomeFresh();
 
   return (
     <View style={styles.screen}>

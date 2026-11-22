@@ -4,10 +4,11 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Text from './Txt'; // <Text> that draws Bangla digits clearly
 import Icon, { IconName } from './Icon';
 import { colors, fonts } from '../theme/tokens';
+import { openTab, TabPath } from '../lib/nav';
 
 export type NavTab = 'home' | 'forecast' | 'history' | 'check';
 
-const TABS: { id: NavTab; icon: IconName; label: string; path: '/home' | '/forecast' | '/history' | '/check' }[] = [
+const TABS: { id: NavTab; icon: IconName; label: string; path: TabPath }[] = [
   { id: 'home', icon: 'home', label: 'হোম', path: '/home' },
   { id: 'forecast', icon: 'show_chart', label: 'পূর্বাভাস', path: '/forecast' },
   { id: 'history', icon: 'calendar_month', label: 'ইতিহাস', path: '/history' },
@@ -18,10 +19,10 @@ const TABS: { id: NavTab; icon: IconName; label: string; path: '/home' | '/forec
 export const NAV_HEIGHT = 80;
 
 // One tab: icon, label and a dot under the active one.
-function Tab({ tab, active }: { tab: (typeof TABS)[number]; active: boolean }) {
+function Tab({ tab, active, from }: { tab: (typeof TABS)[number]; active: boolean; from: TabPath }) {
   return (
     <Pressable
-      onPress={() => !active && router.replace(tab.path)}
+      onPress={() => openTab(from, tab.path)}
       accessibilityRole="tab"
       accessibilityLabel={tab.label}
       accessibilityState={{ selected: active }}
@@ -38,10 +39,11 @@ function Tab({ tab, active }: { tab: (typeof TABS)[number]; active: boolean }) {
 // Figma "Bottom nav": Home · Forecast · [lime scan button] · History · Check. Stays fixed at the bottom.
 export default function BottomNav({ active }: { active: NavTab }) {
   const insets = useSafeAreaInsets();
+  const from = TABS.find((t) => t.id === active)!.path; // the tab we are on now
   return (
     <View style={[styles.bar, { paddingBottom: Math.max(insets.bottom, 12) + 8 }]} accessibilityRole="tablist">
-      <Tab tab={TABS[0]} active={active === 'home'} />
-      <Tab tab={TABS[1]} active={active === 'forecast'} />
+      <Tab tab={TABS[0]} active={active === 'home'} from={from} />
+      <Tab tab={TABS[1]} active={active === 'forecast'} from={from} />
       <Pressable
         onPress={() => router.push('/scan')}
         accessibilityRole="button"
@@ -50,8 +52,8 @@ export default function BottomNav({ active }: { active: NavTab }) {
       >
         <Icon name="center_focus_weak" size={30} />
       </Pressable>
-      <Tab tab={TABS[2]} active={active === 'history'} />
-      <Tab tab={TABS[3]} active={active === 'check'} />
+      <Tab tab={TABS[2]} active={active === 'history'} from={from} />
+      <Tab tab={TABS[3]} active={active === 'check'} from={from} />
     </View>
   );
 }

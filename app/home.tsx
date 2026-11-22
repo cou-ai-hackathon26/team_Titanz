@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useState } from 'react';
-import { View, StyleSheet, ScrollView, Pressable } from 'react-native';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { View, StyleSheet, ScrollView, Pressable, BackHandler, ToastAndroid, Platform } from 'react-native';
 import { router, useFocusEffect } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -50,8 +50,31 @@ function weekDays(plans: MealPlan[], now: Date) {
 }
 
 // Screen 04 · Home: greeting, iftar countdown, last sugar, this week, pre-iftar check, bottom nav.
+// Android back button on Home: the first press shows "press again to exit",
+// a second press within 2 seconds closes the app.
+function useDoubleBackToExit() {
+  const lastPress = useRef(0);
+  useFocusEffect(
+    useCallback(() => {
+      if (Platform.OS !== 'android') return;
+      const sub = BackHandler.addEventListener('hardwareBackPress', () => {
+        const now = Date.now();
+        if (now - lastPress.current < 2000) {
+          BackHandler.exitApp();
+          return true;
+        }
+        lastPress.current = now;
+        ToastAndroid.show('বন্ধ করতে আবার চাপুন (Press again to exit)', ToastAndroid.SHORT);
+        return true; // stay on Home
+      });
+      return () => sub.remove();
+    }, []),
+  );
+}
+
 export default function HomeScreen() {
   const insets = useSafeAreaInsets();
+  useDoubleBackToExit();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [readings, setReadings] = useState<Reading[]>([]);
   const [plans, setPlans] = useState<MealPlan[]>([]);

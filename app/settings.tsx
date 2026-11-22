@@ -9,7 +9,7 @@ import Button from '../components/Button';
 import BackButton from '../components/BackButton';
 import Input from '../components/Input';
 import Icon, { IconName } from '../components/Icon';
-import { goBack } from '../lib/nav';
+import { goBack, startOver } from '../lib/nav';
 import {
   loadProfile, saveProfile, loadRisk, loadMealPlans, loadReadings, loadSettings, saveSettings, deleteAllData,
   Profile, RiskRecord,
@@ -101,7 +101,7 @@ export default function SettingsScreen() {
   // Deletes everything and starts again from the Welcome screen.
   async function wipe() {
     await deleteAllData();
-    router.replace('/');
+    startOver();
   }
 
   return (

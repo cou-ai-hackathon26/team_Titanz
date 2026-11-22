@@ -11,7 +11,7 @@ import Stepper from '../components/Stepper';
 import Toggle from '../components/Toggle';
 import ForecastChart from '../components/ForecastChart';
 import BottomNav, { NAV_HEIGHT } from '../components/BottomNav';
-import { goBack } from '../lib/nav';
+import { goBack, goHomeFresh } from '../lib/nav';
 import { getScan } from '../lib/scanStore';
 import { saveMealPlan } from '../lib/storage';
 import { FOOD_BY_ID } from '../lib/foods';
@@ -78,7 +78,7 @@ export default function ForecastScreen() {
       peakAfter: after.peak,
     });
     setSaved(true);
-    router.replace('/home');
+    goHomeFresh();
   }
 
   return (
