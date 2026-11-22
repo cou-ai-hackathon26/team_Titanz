@@ -142,6 +142,19 @@ export default function RiskResultScreen() {
           ) : (
             <Text style={styles.noReasons}>আপনার উত্তরে বড় কোনো ঝুঁকি পাওয়া যায়নি।</Text>
           )}
+          {result.checks.length > 0 ? (
+            <>
+              <Text style={styles.why}>যা পরীক্ষা করানো দরকার</Text>
+              <View style={styles.reasons}>
+                {result.checks.map((c) => (
+                  <View key={c} style={styles.reasonChip}>
+                    <Icon name="help" size={14} color={colors.textSecondary} />
+                    <Text style={styles.reasonText}>{c}</Text>
+                  </View>
+                ))}
+              </View>
+            </>
+          ) : null}
           {quickQuiz && result.band !== 'high' ? (
             <Text style={styles.note}>
               এটি ছোট যাচাই, কয়েকটি প্রশ্ন বাদ রাখা হয়েছে। তাই আসল ঝুঁকি কিছুটা বেশি হতে পারে।

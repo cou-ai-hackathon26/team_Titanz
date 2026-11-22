@@ -27,7 +27,12 @@ function planQuiz(profile: Profile) {
     if (id === 'treatment') return treatmentChoice !== 'auto-other';
     return true;
   });
-  return { ids, known, treatmentIds: treatmentChoice === 'auto-other' ? [] : treatmentChoice };
+  return {
+    ids,
+    known,
+    treatmentIds: treatmentChoice === 'auto-other' ? [] : treatmentChoice,
+    under70: profile.age !== null && profile.age < 70, // hide the "over 70, no help at home" answer
+  };
 }
 
 // Screen 02 · Risk Quiz: one IDF-DAR question per page, big answer cards, Back / Next at the bottom.
@@ -53,8 +58,12 @@ export default function RiskQuizScreen() {
 
   const total = plan.ids.length;
   const element = getElement(plan.ids[index]);
-  const options =
-    element.id === 'treatment' ? element.options.filter((o) => plan.treatmentIds.includes(o.id)) : element.options;
+  // Only show answers that can apply to this person.
+  const options = element.options.filter((o) => {
+    if (element.id === 'treatment') return plan.treatmentIds.includes(o.id);
+    if (element.id === 'frailty' && o.id === 'gt70_alone') return !plan.under70;
+    return true;
+  });
   const picked = answers[element.id];
   const isLast = index === total - 1;
 

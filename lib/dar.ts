@@ -13,6 +13,7 @@ export type DarOption = {
   labelBn: string; // what the user taps (plain Bangla)
   labelEn: string; // short English line under it
   reasonBn?: string; // short "why" chip on the result screen (only for options that add points)
+  checkBn?: string; // for "don't know" answers: a test the user should get (shown under "যা পরীক্ষা করানো দরকার")
 };
 
 export type DarElement = {
@@ -31,16 +32,16 @@ export const DAR_ELEMENTS: DarElement[] = [
     id: 'type', no: 1, topicBn: 'ডায়াবেটিস', topicIcon: 'bloodtype',
     questionBn: 'আপনার কোন ধরনের ডায়াবেটিস?', questionEn: 'Which type of diabetes do you have?',
     options: [
-      { id: 't1', points: 1, labelBn: 'টাইপ ১', labelEn: 'Type 1', reasonBn: 'টাইপ ১ ডায়াবেটিস' },
       { id: 't2', points: 0, labelBn: 'টাইপ ২', labelEn: 'Type 2' },
+      { id: 't1', points: 1, labelBn: 'টাইপ ১', labelEn: 'Type 1', reasonBn: 'টাইপ ১ ডায়াবেটিস' },
     ],
   },
   {
     id: 'duration', no: 2, topicBn: 'ডায়াবেটিস', topicIcon: 'bloodtype',
     questionBn: 'কত বছর ধরে ডায়াবেটিস?', questionEn: 'How long have you had diabetes?',
     options: [
-      { id: 'ge10', points: 1, labelBn: '১০ বছর বা তার বেশি', labelEn: '10 years or more', reasonBn: '১০ বছরের বেশি ডায়াবেটিস' },
       { id: 'lt10', points: 0, labelBn: '১০ বছরের কম', labelEn: 'Less than 10 years' },
+      { id: 'ge10', points: 1, labelBn: '১০ বছর বা তার বেশি', labelEn: '10 years or more', reasonBn: '১০ বছরের বেশি ডায়াবেটিস' },
     ],
   },
   {
@@ -48,11 +49,11 @@ export const DAR_ELEMENTS: DarElement[] = [
     questionBn: 'আপনার সুগার কি কখনো খুব কমে যায়?', questionEn: 'Does your sugar ever go too low?',
     hintBn: 'সুগার কমলে সাধারণত মাথা ঘোরে, ঘাম হয়, হাত কাঁপে।',
     options: [
-      { id: 'unaware', points: 6.5, labelBn: 'কমে গেলেও টের পাই না', labelEn: 'It goes low but I don’t feel it', reasonBn: 'সুগার কমলে টের পান না' },
-      { id: 'severe', points: 5.5, labelBn: 'সম্প্রতি খুব কমেছিল, অন্যের সাহায্য লেগেছিল', labelEn: 'Recent severe low, needed help', reasonBn: 'সম্প্রতি সুগার খুব কমে গিয়েছিল' },
-      { id: 'weekly', points: 3.5, labelBn: 'সপ্তাহে কয়েকবার কমে', labelEn: 'Several times a week', reasonBn: 'প্রায়ই সুগার কমে যায়' },
-      { id: 'lt1week', points: 1, labelBn: 'মাঝে মাঝে কমে (সপ্তাহে ১ বারের কম)', labelEn: 'Less than once a week', reasonBn: 'মাঝে মাঝে সুগার কমে' },
       { id: 'none', points: 0, labelBn: 'কখনো কমে না', labelEn: 'Never' },
+      { id: 'lt1week', points: 1, labelBn: 'মাঝে মাঝে কমে (সপ্তাহে ১ বারের কম)', labelEn: 'Less than once a week', reasonBn: 'মাঝে মাঝে সুগার কমে' },
+      { id: 'weekly', points: 3.5, labelBn: 'সপ্তাহে কয়েকবার কমে', labelEn: 'Several times a week', reasonBn: 'প্রায়ই সুগার কমে যায়' },
+      { id: 'severe', points: 5.5, labelBn: 'সম্প্রতি খুব কমেছিল, অন্যের সাহায্য লেগেছিল', labelEn: 'Recent severe low, needed help', reasonBn: 'সম্প্রতি সুগার খুব কমে গিয়েছিল' },
+      { id: 'unaware', points: 6.5, labelBn: 'সুগার কমে যায়, কিন্তু শরীরে কোনো লক্ষণ বুঝতে পারি না', labelEn: 'It drops, but I get no warning signs', reasonBn: 'সুগার কমলে লক্ষণ বোঝেন না' },
     ],
   },
   {
@@ -64,7 +65,7 @@ export const DAR_ELEMENTS: DarElement[] = [
       { id: '7_5to9', points: 1, labelBn: '৭.৫% – ৯%', labelEn: '7.5 – 9%', reasonBn: 'HbA1c একটু বেশি' },
       { id: 'gt9', points: 2, labelBn: '৯% এর বেশি', labelEn: 'Above 9%', reasonBn: 'HbA1c অনেক বেশি' },
       // Not in the official table. We count "don't know" as the highest HbA1c (2 points) to stay on the safe side.
-      { id: 'unknown', points: 2, labelBn: 'জানি না', labelEn: 'I don’t know', reasonBn: 'HbA1c জানা নেই' },
+      { id: 'unknown', points: 2, labelBn: 'জানি না', labelEn: 'I don’t know', reasonBn: 'HbA1c জানা নেই', checkBn: 'HbA1c পরীক্ষা' },
     ],
   },
   {
@@ -72,16 +73,16 @@ export const DAR_ELEMENTS: DarElement[] = [
     questionBn: 'আপনি কোন ওষুধ নেন?', questionEn: 'Which medicine do you take?',
     hintBn: 'ওষুধের পাতা বা প্রেসক্রিপশন দেখে নিন।',
     options: [
-      { id: 'mdi_mixed', points: 3, labelBn: 'দিনে কয়েকবার মিক্সড ইনসুলিন', labelEn: 'Mixed insulin, several times a day', reasonBn: 'দিনে কয়েকবার ইনসুলিন নেন' },
-      { id: 'basal_bolus', points: 2.5, labelBn: 'খাবারের আগে + রাতে ইনসুলিন, বা পাম্প', labelEn: 'Basal-bolus insulin or pump', reasonBn: 'ইনসুলিন নেন' },
-      { id: 'od_mixed', points: 2, labelBn: 'দিনে একবার মিক্সড ইনসুলিন', labelEn: 'Mixed insulin once a day', reasonBn: 'ইনসুলিন নেন' },
-      { id: 'basal', points: 1.5, labelBn: 'শুধু দিনে একবার লম্বা-মেয়াদি ইনসুলিন', labelEn: 'Basal insulin only', reasonBn: 'ইনসুলিন নেন' },
-      { id: 'glibenclamide', points: 1, labelBn: 'গ্লিবেনক্লামাইড', labelEn: 'Glibenclamide', reasonBn: 'সুগার কমাতে পারে এমন ট্যাবলেট' },
-      { id: 'gliclazide_etc', points: 0.5, labelBn: 'গ্লিক্লাজাইড / গ্লিমেপিরাইড / রিপাগ্লিনাইড', labelEn: 'Gliclazide, glimepiride or repaglinide', reasonBn: 'সুগার কমাতে পারে এমন ট্যাবলেট' },
       { id: 'other', points: 0, labelBn: 'অন্য ট্যাবলেট (যেমন মেটফরমিন) বা শুধু খাবার নিয়ন্ত্রণ', labelEn: 'Other tablets (e.g. metformin) or diet only' },
+      { id: 'gliclazide_etc', points: 0.5, labelBn: 'গ্লিক্লাজাইড / গ্লিমেপিরাইড / রিপাগ্লিনাইড', labelEn: 'Gliclazide, glimepiride or repaglinide', reasonBn: 'সুগার কমাতে পারে এমন ট্যাবলেট' },
+      { id: 'glibenclamide', points: 1, labelBn: 'গ্লিবেনক্লামাইড', labelEn: 'Glibenclamide', reasonBn: 'সুগার কমাতে পারে এমন ট্যাবলেট' },
+      { id: 'basal', points: 1.5, labelBn: 'শুধু দিনে একবার লম্বা-মেয়াদি ইনসুলিন', labelEn: 'Basal insulin only', reasonBn: 'ইনসুলিন নেন' },
+      { id: 'od_mixed', points: 2, labelBn: 'দিনে একবার মিক্সড ইনসুলিন', labelEn: 'Mixed insulin once a day', reasonBn: 'ইনসুলিন নেন' },
+      { id: 'basal_bolus', points: 2.5, labelBn: 'খাবারের আগে + রাতে ইনসুলিন, বা পাম্প', labelEn: 'Basal-bolus insulin or pump', reasonBn: 'ইনসুলিন নেন' },
+      { id: 'mdi_mixed', points: 3, labelBn: 'দিনে কয়েকবার মিক্সড ইনসুলিন', labelEn: 'Mixed insulin, several times a day', reasonBn: 'দিনে কয়েকবার ইনসুলিন নেন' },
       // Not in the official table: "don't know the name". We count the highest option of that group, to stay safe.
-      { id: 'tablet_unknown', points: 1, labelBn: 'ট্যাবলেটের নাম জানি না', labelEn: 'I don’t know the tablet name', reasonBn: 'ট্যাবলেটের নাম জানা নেই' },
-      { id: 'insulin_unknown', points: 3, labelBn: 'ইনসুলিনের ধরন জানি না', labelEn: 'I don’t know the insulin type', reasonBn: 'ইনসুলিন নেন' },
+      { id: 'tablet_unknown', points: 1, labelBn: 'ট্যাবলেটের নাম জানি না', labelEn: 'I don’t know the tablet name', reasonBn: 'ট্যাবলেটের নাম জানা নেই', checkBn: 'ওষুধের নাম ডাক্তারকে জিজ্ঞেস করুন' },
+      { id: 'insulin_unknown', points: 3, labelBn: 'ইনসুলিনের ধরন জানি না', labelEn: 'I don’t know the insulin type', reasonBn: 'ইনসুলিন নেন', checkBn: 'ইনসুলিনের ধরন ডাক্তারকে জিজ্ঞেস করুন' },
     ],
   },
   {
@@ -97,10 +98,10 @@ export const DAR_ELEMENTS: DarElement[] = [
     id: 'acute', no: 7, topicBn: 'জরুরি জটিলতা', topicIcon: 'bloodtype',
     questionBn: 'সুগার খুব বেড়ে গিয়ে হাসপাতালে ভর্তি হয়েছিলেন?', questionEn: 'Hospital stay for very high sugar (DKA/HHS)?',
     options: [
-      { id: '3m', points: 3, labelBn: 'গত ৩ মাসে', labelEn: 'In the last 3 months', reasonBn: 'সম্প্রতি সুগার খুব বেড়েছিল' },
-      { id: '6m', points: 2, labelBn: 'গত ৬ মাসে', labelEn: 'In the last 6 months', reasonBn: 'সুগার খুব বেড়েছিল' },
-      { id: '12m', points: 1, labelBn: 'গত ১২ মাসে', labelEn: 'In the last 12 months', reasonBn: 'সুগার খুব বেড়েছিল' },
       { id: 'none', points: 0, labelBn: 'না', labelEn: 'No' },
+      { id: '12m', points: 1, labelBn: 'গত ১২ মাসে', labelEn: 'In the last 12 months', reasonBn: 'সুগার খুব বেড়েছিল' },
+      { id: '6m', points: 2, labelBn: 'গত ৬ মাসে', labelEn: 'In the last 6 months', reasonBn: 'সুগার খুব বেড়েছিল' },
+      { id: '3m', points: 3, labelBn: 'গত ৩ মাসে', labelEn: 'In the last 3 months', reasonBn: 'সম্প্রতি সুগার খুব বেড়েছিল' },
     ],
   },
   {
@@ -114,13 +115,16 @@ export const DAR_ELEMENTS: DarElement[] = [
   },
   {
     id: 'renal', no: 9, topicBn: 'কিডনি', topicIcon: 'water_drop',
-    questionBn: 'আপনার কিডনির অবস্থা কেমন?', questionEn: 'How are your kidneys?',
-    hintBn: 'ল্যাব রিপোর্টে “eGFR” লেখা ঘর থাকলে সেটি দেখুন।',
+    questionBn: 'ডাক্তার কি কখনো বলেছেন আপনার কিডনি দুর্বল?', questionEn: 'Has a doctor said your kidneys are weak?',
+    hintBn: 'রিপোর্টে “eGFR” থাকলে: ৬০+ ভালো, ৪৫–৬০ একটু দুর্বল, ৩০–৪৫ মাঝারি, ৩০ এর কম খুব দুর্বল।',
     options: [
-      { id: 'gt60', points: 0, labelBn: 'ভালো (eGFR ৬০ এর বেশি)', labelEn: 'Good (eGFR above 60)' },
-      { id: '45to60', points: 2, labelBn: 'একটু দুর্বল (eGFR ৪৫–৬০)', labelEn: 'Mildly reduced (45–60)', reasonBn: 'কিডনি একটু দুর্বল' },
-      { id: '30to45', points: 4, labelBn: 'মাঝারি দুর্বল (eGFR ৩০–৪৫)', labelEn: 'Moderately reduced (30–45)', reasonBn: 'কিডনির সমস্যা আছে' },
-      { id: 'lt30', points: 6.5, labelBn: 'খুব দুর্বল (eGFR ৩০ এর কম)', labelEn: 'Severely reduced (below 30)', reasonBn: 'কিডনির গুরুতর সমস্যা' },
+      { id: 'gt60', points: 0, labelBn: 'না, কিডনি ভালো', labelEn: 'No, kidneys are fine (eGFR above 60)' },
+      { id: '45to60', points: 2, labelBn: 'হ্যাঁ, একটু দুর্বল', labelEn: 'Mildly weak (eGFR 45–60)', reasonBn: 'কিডনি একটু দুর্বল' },
+      { id: '30to45', points: 4, labelBn: 'হ্যাঁ, মাঝারি দুর্বল', labelEn: 'Moderately weak (eGFR 30–45)', reasonBn: 'কিডনির সমস্যা আছে' },
+      { id: 'lt30', points: 6.5, labelBn: 'হ্যাঁ, খুব দুর্বল বা ডায়ালাইসিস চলছে', labelEn: 'Very weak or on dialysis (eGFR below 30)', reasonBn: 'কিডনির গুরুতর সমস্যা' },
+      // Not in the official table. Many people have never had a kidney test. Counting this as the worst
+      // answer (6.5) would make almost everyone "High", so it adds 0 points but asks them to get tested.
+      { id: 'unknown', points: 0, labelBn: 'জানি না, কখনো পরীক্ষা করিনি', labelEn: 'I don’t know / never tested', checkBn: 'কিডনি পরীক্ষা (ক্রিয়েটিনিন / eGFR)' },
     ],
   },
   {
@@ -135,7 +139,7 @@ export const DAR_ELEMENTS: DarElement[] = [
   },
   {
     id: 'frailty', no: 11, topicBn: 'শরীর ও স্মৃতি', topicIcon: 'elderly',
-    questionBn: 'নিচের কোনটা আপনার সাথে মেলে?', questionEn: 'Which one fits you?',
+    questionBn: 'আপনার শরীর ও স্মৃতিশক্তি কেমন?', questionEn: 'How are your health and memory?',
     options: [
       { id: 'none', points: 0, labelBn: 'কোনো সমস্যা নেই', labelEn: 'No problem' },
       { id: 'gt70_alone', points: 3.5, labelBn: 'বয়স ৭০ এর বেশি, বাসায় দেখার কেউ নেই', labelEn: 'Over 70, no help at home', reasonBn: '৭০+ বয়স, বাসায় সাহায্য নেই' },
@@ -155,16 +159,16 @@ export const DAR_ELEMENTS: DarElement[] = [
     id: 'experience', no: 13, topicBn: 'আগের রমজান', topicIcon: 'quiz',
     questionBn: 'আগের রমজানে রোজা রেখে কি সমস্যা হয়েছিল?', questionEn: 'Problems fasting last Ramadan?',
     options: [
-      { id: 'negative', points: 1, labelBn: 'হ্যাঁ, খারাপ অভিজ্ঞতা হয়েছিল', labelEn: 'Yes, a bad experience', reasonBn: 'আগের রমজানে সমস্যা হয়েছিল' },
       { id: 'neutral', points: 0, labelBn: 'না', labelEn: 'No' },
+      { id: 'negative', points: 1, labelBn: 'হ্যাঁ, খারাপ অভিজ্ঞতা হয়েছিল', labelEn: 'Yes, a bad experience', reasonBn: 'আগের রমজানে সমস্যা হয়েছিল' },
     ],
   },
   {
     id: 'hours', no: 14, topicBn: 'রোজার সময়', topicIcon: 'quiz',
     questionBn: 'রোজা কত ঘণ্টার?', questionEn: 'How long is the fast?',
     options: [
-      { id: 'ge16', points: 1, labelBn: '১৬ ঘণ্টা বা বেশি', labelEn: '16 hours or more', reasonBn: 'লম্বা রোজা' },
       { id: 'lt16', points: 0, labelBn: '১৬ ঘণ্টার কম', labelEn: 'Less than 16 hours' },
+      { id: 'ge16', points: 1, labelBn: '১৬ ঘণ্টা বা বেশি', labelEn: '16 hours or more', reasonBn: 'লম্বা রোজা' },
     ],
   },
 ];
@@ -195,6 +199,7 @@ export type DarResult = {
   score: number;
   band: DarBand;
   reasons: { text: string; points: number }[]; // answers that added points, biggest first
+  checks: string[]; // tests to get, from "don't know" answers
   unanswered: string[]; // element ids with no answer (counted as 0)
 };
 
@@ -202,6 +207,7 @@ export type DarResult = {
 export function scoreDar(answers: DarAnswers): DarResult {
   let score = 0;
   const reasons: DarResult['reasons'] = [];
+  const checks: string[] = [];
   const unanswered: string[] = [];
   for (const el of DAR_ELEMENTS) {
     const opt = el.options.find((o) => o.id === answers[el.id]);
@@ -211,16 +217,17 @@ export function scoreDar(answers: DarAnswers): DarResult {
     }
     score += opt.points;
     if (opt.points > 0 && opt.reasonBn) reasons.push({ text: opt.reasonBn, points: opt.points });
+    if (opt.checkBn) checks.push(opt.checkBn);
   }
   reasons.sort((a, b) => b.points - a.points);
-  return { score, band: darBand(score), reasons, unanswered };
+  return { score, band: darBand(score), reasons, checks, unanswered };
 }
 
 // Which treatment options to show, based on what the user said on "About you".
 // Diet only -> no question needed (answer "other"). Tablets -> tablet options. Insulin -> insulin options.
 export function treatmentOptionIds(treatment: 'diet' | 'tablets' | 'insulin' | null): string[] | 'auto-other' {
   if (treatment === 'diet') return 'auto-other';
-  if (treatment === 'tablets') return ['glibenclamide', 'gliclazide_etc', 'other', 'tablet_unknown'];
-  if (treatment === 'insulin') return ['mdi_mixed', 'basal_bolus', 'od_mixed', 'basal', 'insulin_unknown'];
+  if (treatment === 'tablets') return ['other', 'gliclazide_etc', 'glibenclamide', 'tablet_unknown'];
+  if (treatment === 'insulin') return ['basal', 'od_mixed', 'basal_bolus', 'mdi_mixed', 'insulin_unknown'];
   return getElement('treatment').options.map((o) => o.id);
 }

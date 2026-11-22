@@ -56,3 +56,18 @@ test('Unanswered questions count 0 and are listed', () => {
   assert.equal(r.score, 3.5);
   assert.equal(r.unanswered.length, DAR_ELEMENTS.length - 1);
 });
+
+test('Answers are listed from least to most risk ("don’t know" answers last)', () => {
+  for (const el of DAR_ELEMENTS) {
+    const known = el.options.filter((o) => !o.id.includes('unknown')).map((o) => o.points);
+    assert.deepEqual(known, [...known].sort((a, b) => a - b), el.id);
+    const firstUnknown = el.options.findIndex((o) => o.id.includes('unknown'));
+    if (firstUnknown >= 0) assert.ok(el.options.slice(firstUnknown).every((o) => o.id.includes('unknown')), el.id);
+  }
+});
+
+test('Kidney "don’t know" adds 0 points but asks for a test', () => {
+  const r = scoreDar({ ...base, renal: 'unknown' });
+  assert.equal(r.score, 0);
+  assert.deepEqual(r.checks, ['কিডনি পরীক্ষা (ক্রিয়েটিনিন / eGFR)']);
+});
