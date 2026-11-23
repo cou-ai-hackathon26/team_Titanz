@@ -89,6 +89,7 @@ Response:
    - Open the address in a browser: `aiKeySet: true` means the key is in Vercel.
    - Redeploy after code or key changes: `cd api && npx vercel deploy --prod`.
    - Add a key: `cd api && npx vercel env add GEMINI_API_KEY_2 production` (choose Secret, paste the key), then redeploy.
+   - Free backup: Groq (console.groq.com, no card) → add `GROQ_API_KEY` the same way. Order: Gemini keys → Groq → Claude (if `ANTHROPIC_API_KEY`). Gemini free tier is only 20 scans/day per Google project; Groq free ≈ 1,000 requests/day but 8K tokens/min (~3 scans/min).
 
 ## Setup checklist
 1. Node LTS, `npm i -g eas-cli vercel`

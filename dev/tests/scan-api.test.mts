@@ -112,3 +112,41 @@ test('Backup keys: key 1 out of free quota (429) → key 2 answers', async () =>
     delete process.env.GEMINI_API_KEY_2;
   }
 });
+
+test('Groq backup: Gemini out of daily quota → Groq reads the photo (JSON inside thinking text is still found)', async () => {
+  const realFetch = globalThis.fetch;
+  process.env.GEMINI_API_KEY = 'test-key';
+  process.env.GROQ_API_KEY = 'groq-test-key';
+  const urls: string[] = [];
+  let groqBody: any = null;
+  globalThis.fetch = (async (url: string, init: RequestInit) => {
+    urls.push(url);
+    if (url.includes('generativelanguage')) {
+      return new Response(JSON.stringify({ error: { message: 'Quota exceeded ... requests per day limit exceeded on Free Tier' } }), { status: 429 });
+    }
+    groqBody = JSON.parse(String(init.body));
+    const content = '<think>looking</think>{"items":[{"id":"khejur","count":3,"confidence":0.9},{"id":"made-up","count":1,"confidence":0.9}],"unknown":[]}';
+    return new Response(JSON.stringify({ model: 'qwen/qwen3.8-27b', choices: [{ message: { content } }] }), { status: 200 });
+  }) as typeof fetch;
+  try {
+    const res = await POST(new Request('http://x/api/scan', { method: 'POST', body: JSON.stringify({ image: 'a'.repeat(200) }) }));
+    const body = await res.json();
+    assert.equal(res.status, 200);
+    assert.deepEqual(body.items, [{ id: 'khejur', count: 3, confidence: 0.9 }]); // made-up id dropped
+    assert.equal(body.model, 'groq/qwen/qwen3.8-27b');
+    assert.ok(urls.some((u) => u.includes('api.groq.com')));
+    assert.equal(groqBody.response_format.type, 'json_object');
+    assert.match(groqBody.messages[1].content[1].image_url.url, /^data:image\/jpeg;base64,/);
+
+    // Groq also out for the day → clear "daily limit" message
+    globalThis.fetch = (async (url: string) =>
+      new Response(JSON.stringify({ error: { message: url.includes('groq') ? 'Rate limit reached ... tokens per day (TPD)' : 'requests per day limit exceeded' } }), { status: 429 })) as typeof fetch;
+    const out = await POST(new Request('http://x/api/scan', { method: 'POST', body: JSON.stringify({ image: 'a'.repeat(200) }) }));
+    assert.equal(out.status, 429);
+    assert.match((await out.json()).error, /Daily free AI limit/);
+  } finally {
+    globalThis.fetch = realFetch;
+    delete process.env.GROQ_API_KEY;
+    delete process.env.GEMINI_API_KEY;
+  }
+});

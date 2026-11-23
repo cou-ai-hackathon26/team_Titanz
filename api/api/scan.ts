@@ -1,5 +1,5 @@
 // POST /api/scan — reads an iftar plate photo with a vision AI and returns which foods are on it.
-// AI: Google Gemini by default (GEMINI_API_KEY, free tier). Set SCAN_PROVIDER=claude to use Claude instead.
+// AI: Google Gemini by default (GEMINI_API_KEY, free tier), then Groq (GROQ_API_KEY, free) and Claude as backups.
 // The AI ONLY names foods and counts. All sugar maths happens in the app (lib/meal.ts, lib/forecast.ts).
 // API keys live only in Vercel env vars (or api/.env.local for local tests). Never put a key in the app.
 //
@@ -9,6 +9,7 @@
 import { FOOD_LIST } from '../food-list.ts';
 import { askGeminiWithBackups } from '../providers/gemini.ts';
 import { askClaude } from '../providers/claude.ts';
+import { askGroq, hasGroq } from '../providers/groq.ts';
 import { ScanError } from '../providers/scanError.ts';
 
 const QUESTION = 'Which foods are on this plate, and how many of each?';
@@ -78,7 +79,7 @@ export function OPTIONS(): Response {
 
 // Opening the address in a browser: say the server is running (never shows any key).
 export function GET(): Response {
-  const hasKey = Boolean(process.env.GEMINI_API_KEY || process.env.ANTHROPIC_API_KEY);
+  const hasKey = Boolean(process.env.GEMINI_API_KEY || process.env.GROQ_API_KEY || process.env.ANTHROPIC_API_KEY);
   return json({ ok: true, service: 'Roza-Safe scan server', aiKeySet: hasKey, howToUse: 'The app sends photos here with POST.' });
 }
 
@@ -106,13 +107,27 @@ export function cleanAnswer(raw: { items?: ScanItem[]; unknown?: string[] }) {
 // Asks the AI services in order until one answers (see the comment in POST).
 async function askWithFallback(image: string) {
   if (process.env.SCAN_PROVIDER === 'claude') return askClaude(image, SYSTEM_PROMPT, ANSWER_SCHEMA, QUESTION);
+  if (process.env.SCAN_PROVIDER === 'groq') return askGroq(image, SYSTEM_PROMPT, ANSWER_SCHEMA, QUESTION);
+  // True when another AI service might still answer (this one is out of quota, busy, or has no/a wrong key).
+  const tryNext = (error: unknown) => error instanceof ScanError && (error.status === 429 || error.status === 503 || /key/i.test(error.message));
+  let lastError: unknown;
   try {
     return await askGeminiWithBackups(image, SYSTEM_PROMPT, ANSWER_SCHEMA, QUESTION);
   } catch (error) {
-    const outOfGemini = error instanceof ScanError && (error.status === 429 || error.status === 503 || /key/i.test(error.message));
-    if (outOfGemini && process.env.ANTHROPIC_API_KEY) return askClaude(image, SYSTEM_PROMPT, ANSWER_SCHEMA, QUESTION);
-    throw error;
+    if (!tryNext(error)) throw error;
+    lastError = error;
   }
+  if (hasGroq()) {
+    try {
+      return await askGroq(image, SYSTEM_PROMPT, ANSWER_SCHEMA, QUESTION);
+    } catch (error) {
+      console.error('Groq backup failed:', error instanceof Error ? error.message : error);
+      if (!tryNext(error)) throw error;
+      lastError = error;
+    }
+  }
+  if (process.env.ANTHROPIC_API_KEY) return askClaude(image, SYSTEM_PROMPT, ANSWER_SCHEMA, QUESTION);
+  throw lastError;
 }
 
 // The endpoint: check the photo, ask the AI, clean the answer, send it back.
@@ -125,8 +140,8 @@ export async function POST(request: Request): Promise<Response> {
   }
   if (typeof image !== 'string' || image.length < 100) return json({ error: 'Missing photo' }, 400);
   if (image.length > MAX_IMAGE_CHARS) return json({ error: 'Photo too large' }, 413);
-  // Which AI to ask: SCAN_PROVIDER=claude → Claude only. Otherwise Gemini (all keys in turn), and if Gemini
-  // is out of quota or busy and a Claude key is set, Claude as the last backup.
+  // Which AI to ask: SCAN_PROVIDER=claude or =groq → only that one. Otherwise Gemini (all keys in turn);
+  // if Gemini is out of quota or busy: Groq (free) if GROQ_API_KEY is set, then Claude if ANTHROPIC_API_KEY is set.
   try {
     const answer = await askWithFallback(image);
     const cleaned = cleanAnswer(answer.raw as { items?: ScanItem[]; unknown?: string[] });

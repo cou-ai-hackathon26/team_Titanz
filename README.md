@@ -18,6 +18,7 @@ Risk check uses the IDF-DAR (2021) Ramadan risk score.
 | Tool / model / API | Used for |
 |---|---|
 | Google Gemini API — `gemini-4-hydrogen` (free tier) | Reads the iftar photo: which foods and how many (`api/api/scan.ts`, `api/providers/gemini.ts`) |
+| Groq API — `qwen/qwen3.8-27b` (free plan) | Backup photo reader when Gemini's free quota is used up (`api/providers/groq.ts`) |
 | Anthropic Claude API — `claude-opus-5-5` | Backup photo reader, only if every Gemini key is out of quota (`api/providers/claude.ts`) |
 | Claude Code (Claude Opus 5.5) | Coding assistant: wrote most of the app code with the team, tests, docs |
 | Figma + Figma MCP | UI design; Claude Code read the Figma screens to build matching layouts |
