@@ -79,3 +79,9 @@ Risk elements (one quiz question each, roughly): diabetes type, duration, hypogl
   3. Recheck in 15 minutes; if still low or feeling worse, get medical help.
 - "I feel normal" → reassurance + reminder to check sugar if unsure.
 - Logged reading (lib/hypo.ts, IDF-DAR 2021 "break the fast" rule): below 3.9 → break the fast now (red); 3.9–5.5 → recheck in 15 min (amber); 5.6–10 → ok (green); 10.1–16.7 → high, drink water and recheck (amber); **above 16.7 mmol/L (300 mg/dL) → break the fast now and contact a doctor (red)**. No medicine or insulin advice.
+
+## 6. Sehri or iftar, and reminders (`lib/time.ts`, `lib/reminders.ts`)
+- **Which meal a plate is:** from midnight until 1 hour after the district's sehri end → sehri; the rest of the day → iftar (`mealForTime`). The user can switch it on the plate screen; it is saved with the plan.
+- **Pre-iftar reminder:** 1 hour before iftar for the user's district (`reminderTime`), tap opens the pre-iftar check.
+- **Sehri medicine reminder:** only for tablet/insulin users, 30 minutes before sehri ends. Text: take your sehri medicine the way your doctor said, don't change the dose yourself. **Never a dose or medicine name** (`docs/RULES.md`).
+- Sun times (sehri end = Fajr at 18°, iftar = sunset) are computed on the phone (`lib/places.ts`, NOAA formulas) for the districts in the list (9 cities: Cumilla and the 8 divisional cities).

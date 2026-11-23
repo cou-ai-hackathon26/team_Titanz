@@ -7,43 +7,43 @@
 | Photos | `expo-camera` (live camera, screen 05), `expo-image-picker` (gallery), `expo-image-manipulator` (resize) | Added 22 Nov (approved). Photos are shrunk to 1024px wide, JPEG 0.7 (`lib/photo.ts`) |
 | Chart | `react-native-svg` | Hand-drawn path for the curve + safe-zone band (simpler than a chart lib) |
 | Storage | `@react-native-async-storage/async-storage` | Risk result, logs, history. No login, no DB |
-| Notifications | `expo-notifications` (local only) | NICE feature N2 |
-| Speech | `expo-speech` | NICE feature N5 |
+| Notifications | `expo-notifications` (local only, added 23 Nov, approved) | `lib/reminders.ts`: 14 days of reminders scheduled on the phone, refreshed on app open |
+| Speech | `expo-speech` | NICE feature N5 (not built) |
 | Fonts | `@expo-google-fonts/hind-siliguri`, `@expo-google-fonts/inter` | Import each weight from its own subpath (e.g. `/400Regular`) so only used files ship |
 | Bangla digits | Noto Sans Bengali, **digits ০–৯ only** (`assets/fonts/BanglaDigits_*.ttf`, ~3 KB each) | Hind Siliguri's "১" is unreadable. Always use `components/Txt` instead of `Text`; number inputs use `digitsOnly` |
 | Icons | Material Symbols Rounded, **subset font** in `assets/fonts/` (from Google Fonts, 34 icons, 12 KB) | Add icons: regenerate the subset + add the code in `components/Icon.tsx` |
 | Images | `expo-image` (added 22 Nov, approved) | Shows Figma PNG and SVG files (Metro `assetExts` includes `svg`) |
 | Web preview | `react-dom`, `react-native-web`, `@expo/metro-runtime` (added 22 Nov, approved) | Dev only: lets Claude preview screens in a browser. Real testing = Expo Go / APK |
 | API | One **Vercel** function `api/api/scan.ts` (its own project in `api/`, own package.json) | Holds the AI key. Local test without Vercel: `cd api && npm run dev` |
-| Vision AI | **Gemini** `gemini-4-hydrogen` (free tier, REST + JSON schema) — default. **Claude** `claude-opus-5-5` kept as option (`SCAN_PROVIDER=claude`) | Switched 22 Nov: Gemini key is free. Claude needs an Anthropic API key with credit (a Claude Pro subscription can't be used by an app). Compare both on the 15 test photos if time allows |
-| Build | **EAS Build** → APK (`preview` profile) | Upload APK to GitHub Releases |
+| Vision AI | **Gemini** `gemini-4-hydrogen` (free tier, REST + JSON schema, up to 5 keys) → **Groq** `qwen/qwen3.8-27b` (free, JSON mode) → **Claude** `claude-opus-5-5` (if `ANTHROPIC_API_KEY`) | Order is automatic on quota/busy errors. `SCAN_PROVIDER=claude` or `=groq` forces one. Live: https://roza-safe-api.vercel.app/api/scan |
+| Build | **EAS Build** → APK (`preview` profile in `eas.json`, Expo team `titanz`) | Scan URL is built in (`lib/scanApi.ts`); APK in GitHub Releases |
+| Motion | React Native's built-in `Animated` (no extra package) | `lib/motion.ts` springs + reduce-motion; `PressScale`, `FadeIn`, `SlideIn`, `Sheet` components |
+| Navigation | Expo Router stack + `app/(tabs)` tab group | Home / Forecast / History share one fixed `BottomNav`; back goes to Home, double back exits |
 | Coding help | Claude Code, Claude Pro, Cursor | List all in README |
 
 ## Folder layout
 ```
 roza-safe/
-  CLAUDE.md  AGENTS.md  README.md
+  CLAUDE.md  README.md  eas.json  app.json
   docs/                 RULES, PRODUCT, STACK, LOGIC, PLAN, PROGRESS
-  design/               old Stitch exports (reference only; build from Figma)
   app/                  Expo Router screens
-    index.tsx           onboarding (M1)
-    risk-quiz.tsx       M2
-    risk-result.tsx     M3
-    scan.tsx            M4
-    forecast.tsx        M5
-    check-in.tsx        M6
-    home.tsx            N1
-  components/           Button, Card, Gauge, CurveChart, FoodRow, Footer
+    index.tsx           welcome (00a)        guide/[step].tsx  guides 1–3
+    about-you.tsx       00g (also ?edit=1)   iftar.tsx         00h: district, family number, reminders
+    risk-quiz.tsx       M2                   risk-result.tsx   M3
+    scan.tsx            camera / gallery / add by hand          scan-result.tsx  M4 plate (sehri/iftar)
+    (tabs)/             fixed tab bar: home.tsx (N1), forecast.tsx (M5), history.tsx (N4)
+    plan/[date].tsx     history detail       check.tsx, emergency.tsx  M6
+    settings.tsx        profile, family number, scan server, backup, delete
+  components/           Button, Txt, Icon, BottomNav, Sheet, PickerSheet, ReadingSheet, RiskGauge,
+                        ForecastChart, CarbScale, Stepper, PressScale, FadeIn, SlideIn, ...
   lib/
-    foods.ts            food table (see LOGIC.md)
-    dar.ts              IDF-DAR scoring
-    forecast.ts         glycemic load + curve + what-if
-    api.ts              calls /api/scan
-    storage.ts          AsyncStorage helpers
+    foods.ts  meal.ts  forecast.ts  dar.ts  hypo.ts     food table + all the maths (tested)
+    scanApi.ts  scanStore.ts  photo.ts                  scan flow
+    storage.ts  backup.ts  reminders.ts  places.ts       phone storage, backup text, notifications, sun times
+    time.ts  phone.ts  bangla.ts  nav.ts  motion.ts      helpers
   theme/tokens.ts       colors, radius, fonts
-  api/
-    scan.ts             Vercel function
-  dev/fixtures/         sample JSON for dev only (never in demo path)
+  api/                  Vercel project: api/scan.ts + providers/ (gemini, groq, claude)
+  dev/tests/            41 unit tests (npm test)
 ```
 
 ## Scan API contract

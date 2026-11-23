@@ -32,6 +32,22 @@ A 55-year-old with type 2 diabetes in Cumilla who fasts every Ramadan, takes tab
 | N4 | History screen (week of fasts, meals, readings) |
 | N5 | Bangla read-aloud of tips (expo-speech) |
 
+## Build status (23 Nov 2026, APK v1.0)
+| # | Status | Notes |
+|---|---|---|
+| M1 Onboarding | ✅ | Welcome, 3 guides, About you, Iftar & contact (no sign-in) |
+| M2 Risk quiz | ✅ | 8 questions (+ pregnancy), answers least → most risky, spring slide between questions |
+| M3 Risk result | ✅ | Gauge sweeps to the score, reasons, doctor report share |
+| M4 Meal scan | ✅ | Camera / gallery / **add by hand**; Gemini → Groq → Claude fallback; sehri or iftar |
+| M5 Sugar forecast | ✅ | Range shown, 3 what-ifs, save plan |
+| M6 Pre-iftar check | ✅ | Symptom tiles → emergency steps, reading log, 16263, family SMS / Contacts |
+| N1 Home | ✅ | Countdown + ring, last sugar, tappable week, check card |
+| N2 Notifications | ✅ | 1 h before iftar (opens check) + sehri medicine reminder for tablet/insulin users (no dose) |
+| N3 Personal tuning | ❌ | Not built |
+| N4 History | ✅ | List + plan detail screen + day filter (from Home week) |
+| N5 Read-aloud | ❌ | Not built |
+| Extra | ✅ | Settings (profile, family number, scan server test, backup, delete all), real tab bar, Apple-style motion |
+
 ## Screens source
 **Source of truth: Figma, page "My choice"** (Nadim's final pick, 21 Nov 2026).
 Pages "Redesign v2/v3/v4" and "Stitch Screens" are earlier explorations: reference only.
@@ -61,7 +77,7 @@ Flows: "Roza-Safe · full demo" (starts at Welcome) and "Home (daily use)".
 | 09 | Emergency Steps | M6 ("Yes" → 3 safety steps, call 16263, alert family) |
 | 10 | History | N4 |
 
-Bottom nav (on 04, 07, 10): হোম · পূর্বাভাস · [lime scan button, opens 05] · ইতিহাস · চেক. It stays fixed while the screen scrolls.
+Bottom nav (on 04, 07, 10): হোম · পূর্বাভাস · [lime scan button, opens 05] · ইতিহাস · চেক. Built as a real tab bar (`app/(tabs)`): it never moves, only the page fades and the active dot moves. চেক opens screen 08 full-screen on top.
 Flow: 00a → 00b → 00c → 00d → 00g → 00h → 02 → 03 → 04 (no sign-in). From Home: scan → 05 → 06 → 07; check row → 08 → "Yes" → 09.
 
 **Decided 22 Nov 2026 — no sign-in.** Screens 00e (Sign in) and 00f (Code check) are NOT built, and the Welcome "আমার অ্যাকাউন্ট আছে" link is dropped. Flow in the app: 00a → 00b → 00c → 00d → 00g → 00h → 02. The profile is saved only on the phone (AsyncStorage), matching `docs/RULES.md` ("No login").
