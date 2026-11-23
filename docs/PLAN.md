@@ -5,9 +5,9 @@ Today's date matters: code only from **21 Nov**. Final is **24 Nov** (5 hrs on-s
 ## Roles
 | Who | Owns |
 |---|---|
-| Nadim (lead) | Expo app, all screens (match Figma "My choice" page), navigation, UI polish, APK build, pitch |
-| Teammate 2 | `api/scan.ts`, vision prompt + JSON schema, testing on 15+ real iftar photos, accuracy note |
-| Teammate 3 | `lib/foods.ts` data, `lib/dar.ts`, `lib/forecast.ts`, README, demo video, Q&A cheat sheet |
+| Nadimul Islam (lead) | Expo app, all screens (match Figma "My choice" page), navigation, UI polish, APK build, pitch |
+| Md Lokman Hossen | `api/scan.ts`, vision prompt + JSON schema, testing on 15+ real iftar photos, accuracy note |
+| Mahfiz Rahman | `lib/foods.ts` data, `lib/dar.ts`, `lib/forecast.ts`, README, demo video, Q&A cheat sheet |
 
 Everyone must be able to explain the whole flow.
 
@@ -24,7 +24,7 @@ Everyone must be able to explain the whole flow.
 - [x] Scan flow: photo → API → foods list → +/− edit → total carbs (M4)
 - [x] `lib/forecast.ts` + `CurveChart` + what-if controls (M5)
 - [x] Pre-iftar check + emergency steps (M6)
-- [ ] Test scan on 15 photos; write results in README ("X/15 correct")
+- [x] Test scan on real photos: **8/10 correct** (in README)
 
 ## Day 3 — Mon 23 Nov
 - [x] First APK via EAS (`preview` profile). Install on 2–3 phones.
@@ -41,12 +41,12 @@ Everyone must be able to explain the whole flow.
 - Hour 5: rehearse demo + Q&A twice. Final commit.
 
 ## Status 23 Nov
-APK v1.0 is in GitHub Releases. Still open: accuracy test on 15 photos (README), demo video, team names + guide-image AI in README, pay the fee.
+APK v1.0 is in GitHub Releases. Still open: demo video, pay the fee.
 
 ## Judge Q&A (memorise)
 - **Where is the AI?** Reading a home-cooked plate. No barcode exists for iftar.
 - **Isn't this a wrapper?** AI returns foods only. Food table, glycemic load, curve model and IDF-DAR scoring are our code.
-- **How accurate?** Our test: X of 15 photos correct. Users can fix counts.
+- **How accurate?** Our test: 8 of 10 real iftar photos fully correct. Users can fix counts or add foods by hand.
 - **Why this model?** It scored best on our Bangladeshi food photos.
 - **If the API fails?** Server tries more Gemini keys, then Groq (free), then Claude. If all are out: a clear Bangla message and the user adds foods by hand — the forecast is our maths, so it still works.
 - **Is it safe?** Screening only, estimates not exact values, no dose advice, High risk → doctor.

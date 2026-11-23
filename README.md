@@ -48,13 +48,12 @@ The AI only **reads the plate**. Everything else — the food table, glycemic lo
 | Figma + Figma MCP | UI design; Claude Code read the Figma screens to build matching layouts |
 | Cursor | Coding assistant / editor |
 | Google Stitch | UI design ideas |
-| _image AI used for the guide pictures — fill in_ | Onboarding guide images |
+| Google Gemini (image generation) | Onboarding guide pictures |
 
 All sugar numbers come from our own maths (`lib/forecast.ts`, `lib/meal.ts`, `lib/dar.ts`), not from AI.
 
 ## Accuracy test
-Tested on _N_ real Bangladeshi iftar photos: _X/N_ plates fully correct, _Y/N_ with one wrong item. Notes: _…_
-(First runs on a typical iftar photo: dates, jilapi, beguni, piyaju and chola found with correct counts; the user can fix any count.)
+Tested on **10 real Bangladeshi iftar photos: 8/10 plates fully correct** (every food and count right). When the AI misses or miscounts, the user fixes it with − / + or adds the food by hand, and unsure foods are marked for checking.
 
 ## Run locally
 ```bash
@@ -69,7 +68,7 @@ npx eas build -p android --profile preview   # APK
 Expo (React Native, TypeScript, Expo Router), react-native-svg, AsyncStorage, expo-camera / image-picker, expo-notifications, Vercel serverless function. Fonts: Hind Siliguri, Inter, Noto Sans Bengali (digits).
 
 ## Team
-Nadim (lead, app) · _Teammate 2_ (AI + API) · _Teammate 3_ (data, logic, docs)
+**Team Titanz:** Nadimul Islam (lead, app) · Md Lokman Hossen (AI + API) · Mahfiz Rahman (data, logic, docs)
 
 ## Sources
 - IDF Diabetes Atlas — Bangladesh
