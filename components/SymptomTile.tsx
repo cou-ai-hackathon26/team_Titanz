@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
-import { Animated, Pressable, View, StyleSheet } from 'react-native';
+import { Animated, View, StyleSheet } from 'react-native';
+import PressScale from './PressScale';
 import Text from './Txt'; // <Text> that draws Bangla digits clearly
 import Icon, { IconName } from './Icon';
 import { colors, fonts, radius } from '../theme/tokens';
@@ -22,12 +23,12 @@ export default function SymptomTile({ icon, label, sub, selected, onPress }: Pro
   }, [selected, tick]);
 
   return (
-    <Pressable
+    <PressScale
       onPress={onPress}
       accessibilityRole="checkbox"
       accessibilityLabel={`${label}, ${sub}`}
       accessibilityState={{ checked: selected }}
-      style={({ pressed }) => [styles.tile, selected ? styles.selected : null, pressed && !selected ? styles.pressed : null]}
+      style={(pressed) => [styles.tile, selected ? styles.selected : null, pressed && !selected ? styles.pressed : null]}
     >
       <View style={styles.top}>
         <View style={[styles.iconBg, selected ? styles.iconBgSelected : null]}>
@@ -41,7 +42,7 @@ export default function SymptomTile({ icon, label, sub, selected, onPress }: Pro
         <Text style={styles.label}>{label}</Text>
         <Text style={styles.sub}>{sub}</Text>
       </View>
-    </Pressable>
+    </PressScale>
   );
 }
 

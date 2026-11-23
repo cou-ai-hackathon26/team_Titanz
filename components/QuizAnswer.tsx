@@ -1,4 +1,5 @@
-import { Pressable, View, StyleSheet } from 'react-native';
+import { View, StyleSheet } from 'react-native';
+import PressScale from './PressScale';
 import Text from './Txt'; // <Text> that draws Bangla digits clearly
 import Icon from './Icon';
 import { colors, fonts, radius } from '../theme/tokens';
@@ -13,12 +14,12 @@ type Props = {
 // Figma "Quiz answer": a big white card. Selected = lime fill, green border, dark tick circle.
 export default function QuizAnswer({ label, sub, selected, onPress }: Props) {
   return (
-    <Pressable
+    <PressScale
       onPress={onPress}
       accessibilityRole="radio"
       accessibilityLabel={`${label}, ${sub}`}
       accessibilityState={{ selected }}
-      style={({ pressed }) => [styles.card, selected ? styles.selected : null, pressed && !selected ? styles.pressed : null]}
+      style={(pressed) => [styles.card, selected ? styles.selected : null, pressed && !selected ? styles.pressed : null]}
     >
       <View style={styles.text}>
         <Text style={styles.label}>{label}</Text>
@@ -31,7 +32,7 @@ export default function QuizAnswer({ label, sub, selected, onPress }: Props) {
       ) : (
         <View style={[styles.indicator, styles.indicatorOff]} />
       )}
-    </Pressable>
+    </PressScale>
   );
 }
 

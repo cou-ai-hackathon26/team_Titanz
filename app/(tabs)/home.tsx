@@ -14,6 +14,9 @@ import { FORECAST } from '../../lib/forecast';
 import { dayPart, hoursAndMinutes, minutesOfDay, sameDay, shortDate, WEEKDAYS_BN } from '../../lib/time';
 import { toBanglaDigits } from '../../lib/bangla';
 import { colors, fonts, radius } from '../../theme/tokens';
+import { useGlide } from '../../lib/motion';
+import FadeIn from '../../components/FadeIn';
+import PressScale from '../../components/PressScale';
 
 // What the big lime card shows: time left to iftar during the fast, or to sehri after iftar.
 function fastStatus(district: District, now: Date) {
@@ -147,7 +150,9 @@ export default function HomeScreen() {
           </Pressable>
         </View>
 
+        {/* Cards arrive one after another (FadeIn delays 0 / 70 / 140 / 210 ms) */}
         {/* Big lime card: iftar (or sehri) countdown */}
+        <FadeIn>
         {fast && left ? (
           <View style={styles.countdown} accessible accessibilityLabel={`${fast.mode === 'iftar' ? 'ইফতারের' : 'সেহরির'} বাকি ${left.h} ঘণ্টা ${left.m} মিনিট`}>
             <View style={styles.countdownText}>
@@ -177,9 +182,12 @@ export default function HomeScreen() {
             <Icon name="arrow_forward" size={22} />
           </Pressable>
         )}
+        </FadeIn>
 
         {/* Last sugar reading (tap to add a new one) */}
-        <Pressable
+        <FadeIn delay={70}>
+        <PressScale
+          pressedScale={0.98}
           style={styles.card}
           onPress={() => setLogOpen(true)}
           accessibilityRole="button"
@@ -207,9 +215,11 @@ export default function HomeScreen() {
           ) : (
             <Text style={styles.empty}>এখনো কোনো মাপ নেই — এখানে চেপে লিখুন</Text>
           )}
-        </Pressable>
+        </PressScale>
+        </FadeIn>
 
         {/* This week: one dot per day with a saved iftar plan */}
+        <FadeIn delay={140}>
         <View style={styles.card}>
           <View style={styles.cardHead}>
             <Text style={styles.weekTitle}>এই সপ্তাহ</Text>
@@ -237,9 +247,11 @@ export default function HomeScreen() {
           </View>
           {daysWithPlan === 0 ? <Text style={styles.weekHint}>ইফতারের প্লেট স্ক্যান করে পরিকল্পনা রাখলে এখানে দেখা যাবে।</Text> : null}
         </View>
+        </FadeIn>
 
         {/* Dark green card: pre-iftar check */}
-        <Pressable style={styles.checkCard} onPress={() => router.push('/check')} accessibilityRole="button" accessibilityLabel="ইফতারের আগে শরীর চেক (Pre-iftar check)">
+        <FadeIn delay={210}>
+        <PressScale pressedScale={0.98} style={styles.checkCard} onPress={() => router.push('/check')} accessibilityRole="button" accessibilityLabel="ইফতারের আগে শরীর চেক (Pre-iftar check)">
           <View style={styles.checkIcon}>
             <Icon name="health_and_safety" size={22} />
           </View>
@@ -248,7 +260,8 @@ export default function HomeScreen() {
             <Text style={styles.checkSub}>মাথা ঘোরা বা ঘাম হলে এখনই চেক করুন</Text>
           </View>
           <Icon name="arrow_forward" size={24} color={colors.textOnBrand} />
-        </Pressable>
+        </PressScale>
+        </FadeIn>
       </ScrollView>
       <ReadingSheet visible={logOpen} when="other" onClose={() => setLogOpen(false)} onSaved={onReadingSaved} />
     </View>
@@ -256,7 +269,9 @@ export default function HomeScreen() {
 }
 
 // The ring on the lime card: fills as the fasting day passes, with a moon in the middle.
-function DayRing({ progress }: { progress: number }) {
+// The ring fills smoothly up to how much of the fast has passed.
+function DayRing({ progress: target }: { progress: number }) {
+  const progress = useGlide(target, 1100, 250);
   const size = 96;
   const stroke = 10;
   const r = (size - stroke) / 2;

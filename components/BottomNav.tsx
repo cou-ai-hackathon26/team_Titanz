@@ -1,4 +1,7 @@
-import { View, Pressable, StyleSheet } from 'react-native';
+import { useEffect, useRef } from 'react';
+import { View, StyleSheet, Animated } from 'react-native';
+import PressScale from './PressScale';
+import { SPRING, NATIVE } from '../lib/motion';
 import { router } from 'expo-router';
 import type { BottomTabBarProps } from 'expo-router/tabs';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -19,10 +22,15 @@ const RIGHT: TabItem[] = [
   { route: 'check', icon: 'health_and_safety', label: 'চেক' },
 ];
 
-// One tab: icon, label and a dot under the active one.
+// One tab: icon, label and a dot under the active one. The dot springs in when the tab becomes active.
 function Tab({ item, active, onPress }: { item: TabItem; active: boolean; onPress: () => void }) {
+  const dot = useRef(new Animated.Value(active ? 1 : 0)).current;
+  useEffect(() => {
+    Animated.spring(dot, { toValue: active ? 1 : 0, ...SPRING.press, useNativeDriver: NATIVE }).start();
+  }, [active, dot]);
   return (
-    <Pressable
+    <PressScale
+      pressedScale={0.9}
       onPress={onPress}
       accessibilityRole="tab"
       accessibilityLabel={item.label}
@@ -32,8 +40,8 @@ function Tab({ item, active, onPress }: { item: TabItem; active: boolean; onPres
     >
       <Icon name={item.icon} size={24} color={active ? colors.textPrimary : colors.textSecondary} style={active ? null : styles.dim} />
       <Text style={[styles.label, active ? styles.labelActive : styles.dim]}>{item.label}</Text>
-      <View style={[styles.dot, active ? styles.dotActive : null]} />
-    </Pressable>
+      <Animated.View style={[styles.dot, styles.dotActive, { opacity: dot, transform: [{ scale: dot }] }]} />
+    </PressScale>
   );
 }
 
@@ -57,14 +65,15 @@ export default function BottomNav({ state, navigateToTab }: BottomTabBarProps) {
   return (
     <View style={[styles.bar, { paddingBottom: Math.max(insets.bottom, 12) + 8 }]} accessibilityRole="tablist">
       {LEFT.map(renderTab)}
-      <Pressable
+      <PressScale
+        pressedScale={0.92}
         onPress={() => router.push('/scan')}
         accessibilityRole="button"
         accessibilityLabel="প্লেট স্ক্যান করুন (Scan plate)"
-        style={({ pressed }) => [styles.scan, pressed ? styles.scanPressed : null]}
+        style={styles.scan}
       >
         <Icon name="center_focus_weak" size={30} />
-      </Pressable>
+      </PressScale>
       {RIGHT.map(renderTab)}
     </View>
   );
@@ -103,5 +112,4 @@ const styles = StyleSheet.create({
     shadowRadius: 16,
     elevation: 6,
   },
-  scanPressed: { opacity: 0.85 },
 });

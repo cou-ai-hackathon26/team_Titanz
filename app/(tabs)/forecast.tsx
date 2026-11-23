@@ -11,6 +11,7 @@ import Stepper from '../../components/Stepper';
 import Toggle from '../../components/Toggle';
 import ForecastChart from '../../components/ForecastChart';
 import { goHomeFresh } from '../../lib/nav';
+import FadeIn from '../../components/FadeIn';
 import { getScan } from '../../lib/scanStore';
 import { saveMealPlan } from '../../lib/storage';
 import { FOOD_BY_ID } from '../../lib/foods';
@@ -101,6 +102,7 @@ function ForecastView() {
           <View style={styles.topBarSpace} />
         </View>
 
+        <FadeIn delay={0}>
         <View style={styles.card}>
           <View style={styles.headRow}>
             <Text style={styles.headText}>ইফতারের পর সর্বোচ্চ সুগার</Text>
@@ -131,7 +133,9 @@ function ForecastView() {
           <Text style={[styles.summary, { color: zoneColor(after.zone) }]}>{summary(after)}</Text>
           <Text style={styles.assume}>ইফতারের আগে সুগার {bn1(FORECAST.BASELINE_DEFAULT)} mmol/L ধরে হিসাব।</Text>
         </View>
+        </FadeIn>
 
+        <FadeIn delay={120}>
         <View style={styles.card}>
           <View>
             <Text style={styles.whatIfTitle}>কী বদলালে কী হয়?</Text>
@@ -158,6 +162,7 @@ function ForecastView() {
             <Toggle value={whatIf.walk15} onChange={(v) => setWhatIf({ ...whatIf, walk15: v })} label="১৫ মিনিট হাঁটা" />
           </ControlRow>
         </View>
+        </FadeIn>
 
         <Button label="এই পরিকল্পনা রাখুন" sub="Save this plan" icon="check" onPress={savePlan} disabled={saved} />
 

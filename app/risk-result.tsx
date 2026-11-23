@@ -6,6 +6,7 @@ import { StatusBar } from 'expo-status-bar';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Text from '../components/Txt'; // <Text> that draws Bangla digits clearly
 import Button from '../components/Button';
+import FadeIn from '../components/FadeIn';
 import Icon from '../components/Icon';
 import RiskGauge from '../components/RiskGauge';
 import { loadRisk, loadProfile, RiskRecord, Profile } from '../lib/storage';
@@ -110,6 +111,7 @@ export default function RiskResultScreen() {
           <View style={styles.topBarSpace} />
         </View>
 
+        <FadeIn delay={0}>
         <View style={styles.scoreCard}>
           <RiskGauge score={result.score} color={look.color} />
           <View style={[styles.bandChip, { backgroundColor: look.soft }]}>
@@ -122,7 +124,9 @@ export default function RiskResultScreen() {
             <LegendDot color={colors.riskHigh} label="উচ্চ" />
           </View>
         </View>
+        </FadeIn>
 
+        <FadeIn delay={120}>
         <View style={styles.card}>
           <Text style={styles.title}>{look.title}</Text>
           <Text style={styles.titleEn}>{look.titleEn}</Text>
@@ -162,9 +166,12 @@ export default function RiskResultScreen() {
             </Text>
           ) : null}
         </View>
+        </FadeIn>
 
+        <FadeIn delay={220} style={{ gap: 12 }}>
         <Button label="ডাক্তারকে দেখানোর রিপোর্ট" sub="Share report with doctor" icon="ios_share" variant="Secondary" onPress={share} />
         <Button label="হোমে যান" sub="Go to home" onPress={goHome} />
+        </FadeIn>
 
         <View style={styles.disclaimer}>
           <Icon name="info" size={14} color={colors.textSecondary} />

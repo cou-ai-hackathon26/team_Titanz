@@ -3,6 +3,7 @@ import Svg, { Path } from 'react-native-svg';
 import Text from './Txt'; // <Text> that draws Bangla digits clearly
 import { colors, fonts } from '../theme/tokens';
 import { toBanglaDigits } from '../lib/bangla';
+import { useGlide } from '../lib/motion';
 
 type Props = {
   score: number; // IDF-DAR score
@@ -21,8 +22,9 @@ function pointAt(t: number) {
 }
 
 // Figma gauge: grey half-circle track, coloured part filled up to the score, big score in the middle.
+// The coloured part sweeps up to the score when the screen opens.
 export default function RiskGauge({ score, color }: Props) {
-  const fill = Math.min(Math.max(score / SCALE_MAX, 0), 1);
+  const fill = useGlide(Math.min(Math.max(score / SCALE_MAX, 0), 1), 1000, 200);
   const start = pointAt(0);
   const end = pointAt(fill);
   const full = pointAt(1);
@@ -34,7 +36,7 @@ export default function RiskGauge({ score, color }: Props) {
     <View style={styles.box} accessibilityLabel={`ঝুঁকির স্কোর ${scoreText}`}>
       <Svg width={260} height={140} viewBox="0 0 260 140">
         <Path d={track} stroke={colors.bgSurfaceMuted} strokeWidth={22} strokeLinecap="round" fill="none" />
-        {fill > 0 ? <Path d={value} stroke={color} strokeWidth={22} strokeLinecap="round" fill="none" /> : null}
+        {fill > 0.005 ? <Path d={value} stroke={color} strokeWidth={22} strokeLinecap="round" fill="none" /> : null}
       </Svg>
       <View style={styles.center}>
         <View style={styles.scoreRow}>

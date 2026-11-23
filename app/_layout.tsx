@@ -64,7 +64,7 @@ export default function RootLayout() {
         screenOptions={{
           headerShown: false,
           contentStyle: { backgroundColor: colors.bgApp },
-          animation: 'slide_from_right',
+          animation: 'ios_from_right', // iPhone-style push: the new page slides in, the old one eases back
         }}
       />
     </SafeAreaProvider>

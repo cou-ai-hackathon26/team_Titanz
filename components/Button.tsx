@@ -1,4 +1,5 @@
-import { Pressable, View, StyleSheet, StyleProp, ViewStyle } from 'react-native';
+import { View, StyleSheet, StyleProp, ViewStyle } from 'react-native';
+import PressScale from './PressScale';
 import Text from './Txt'; // <Text> that draws Bangla digits clearly
 import Icon, { IconName } from './Icon';
 import { colors, fonts, radius } from '../theme/tokens';
@@ -25,17 +26,17 @@ const looks: Record<ButtonStyle, { bg: string; text: string; border?: string }> 
   Light: { bg: colors.bgPage, text: colors.textPrimary },
 };
 
-// A full pill button, 60 high. Fades to 80% while held (Secondary turns grey instead).
+// A full pill button, 60 high. Shrinks a little while held (PressScale) and darkens slightly.
 export default function Button({ label, sub, icon, variant = 'Primary', onPress, disabled, style }: Props) {
   const look = looks[variant];
   return (
-    <Pressable
+    <PressScale
       onPress={onPress}
       disabled={disabled}
       accessibilityRole="button"
       accessibilityLabel={sub ? `${label}, ${sub}` : label}
       accessibilityState={{ disabled: !!disabled }}
-      style={({ pressed }) => [
+      style={(pressed) => [
         styles.button,
         { backgroundColor: look.bg },
         look.border ? { borderWidth: 1, borderColor: look.border } : null,
@@ -56,7 +57,7 @@ export default function Button({ label, sub, icon, variant = 'Primary', onPress,
           </Text>
         ) : null}
       </View>
-    </Pressable>
+    </PressScale>
   );
 }
 
