@@ -12,7 +12,7 @@ import Icon from '../components/Icon';
 import Button from '../components/Button';
 import { goBack } from '../lib/nav';
 import { preparePhoto } from '../lib/photo';
-import { setScanPhoto, getScan } from '../lib/scanStore';
+import { setScanPhoto, getScan, startManualScan } from '../lib/scanStore';
 import { colors, fonts, radius } from '../theme/tokens';
 
 // A dark fade at the top or bottom so white icons stay readable over the photo.
@@ -76,6 +76,12 @@ export default function ScanCameraScreen() {
 
   const close = () => goBack('/home');
 
+  // No photo: open the plate screen and pick the foods from our list by hand.
+  function addByHand() {
+    startManualScan();
+    router.replace('/scan-result');
+  }
+
   // Camera permission not decided yet (a split second).
   if (!permission) return <View style={styles.screen} />;
 
@@ -89,6 +95,7 @@ export default function ScanCameraScreen() {
         <Text style={styles.askBody}>প্লেটের ছবি তুলতে ক্যামেরা লাগবে। ছবি শুধু বিশ্লেষণে পাঠানো হয়, কোথাও সংরক্ষণ হয় না।</Text>
         <Button label="অনুমতি দিন" sub="Allow camera" variant="Light" onPress={requestPermission} style={styles.askButton} />
         <Button label="গ্যালারি থেকে ছবি" sub="Choose from gallery" variant="Secondary" onPress={pickFromGallery} style={styles.askButton} />
+        <Button label="ছবি ছাড়া নিজে যোগ করুন" sub="Add foods by hand" variant="Secondary" onPress={addByHand} style={styles.askButton} />
         <Pressable onPress={close} accessibilityRole="button" accessibilityLabel="বন্ধ করুন (Close)" hitSlop={10}>
           <Text style={styles.askClose}>বন্ধ করুন</Text>
         </Pressable>
@@ -165,6 +172,10 @@ export default function ScanCameraScreen() {
             <Icon name="cameraswitch" size={22} color={colors.textOnBrand} />
           </Pressable>
         </View>
+        <Pressable onPress={addByHand} accessibilityRole="button" accessibilityLabel="ছবি ছাড়া নিজে খাবার যোগ করুন (Add foods by hand)" style={styles.byHand} hitSlop={8}>
+          <Icon name="edit" size={18} color={colors.textOnBrand} />
+          <Text style={styles.byHandText}>ছবি ছাড়া নিজে যোগ করুন</Text>
+        </Pressable>
         <Text style={styles.privacy}>ছবি শুধু বিশ্লেষণে পাঠানো হয়, কোথাও সংরক্ষণ হয় না</Text>
       </View>
     </View>
@@ -219,5 +230,7 @@ const styles = StyleSheet.create({
   askTitle: { fontFamily: fonts.banglaBold, fontSize: 22, lineHeight: 30, color: colors.textOnBrand, textAlign: 'center' },
   askBody: { fontFamily: fonts.bangla, fontSize: 15, lineHeight: 21, color: colors.textOnBrand, opacity: 0.8, textAlign: 'center' },
   askButton: { alignSelf: 'stretch' },
+  byHand: { alignSelf: 'center', flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 18, paddingVertical: 10, borderRadius: 999, backgroundColor: 'rgba(255,255,255,0.18)' },
+  byHandText: { fontFamily: fonts.banglaSemiBold, fontSize: 15, lineHeight: 21, color: colors.textOnBrand },
   askClose: { fontFamily: fonts.banglaMedium, fontSize: 15, lineHeight: 20, color: colors.textOnBrand, opacity: 0.8 },
 });

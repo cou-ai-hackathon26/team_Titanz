@@ -7,13 +7,19 @@ type CurrentScan = {
   photoBase64: string | null; // to send to the scan API
   items: MealItem[]; // the foods on the plate (after the user's edits)
   version: number; // goes up on every change, so the Forecast tab knows to start fresh
+  manual: boolean; // true = no photo, the user adds the foods by hand
 };
 
-let current: CurrentScan = { photoUri: null, photoBase64: null, items: [], version: 0 };
+let current: CurrentScan = { photoUri: null, photoBase64: null, items: [], version: 0, manual: false };
 
 // Starts a new scan with a fresh photo.
 export function setScanPhoto(uri: string, base64: string) {
-  current = { photoUri: uri, photoBase64: base64, items: [], version: current.version + 1 };
+  current = { photoUri: uri, photoBase64: base64, items: [], version: current.version + 1, manual: false };
+}
+
+// Starts a plate without a photo: the user picks the foods from our list.
+export function startManualScan() {
+  current = { photoUri: null, photoBase64: null, items: [], version: current.version + 1, manual: true };
 }
 
 // Saves the food list (the forecast screen reads it).

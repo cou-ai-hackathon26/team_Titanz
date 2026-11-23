@@ -34,15 +34,19 @@ type Status = 'loading' | 'done' | 'error';
 export default function ScanResultScreen() {
   const insets = useSafeAreaInsets();
   const scan = getScan();
-  const [status, setStatus] = useState<Status>(scan.items.length ? 'done' : 'loading');
+  const [status, setStatus] = useState<Status>(scan.items.length || scan.manual ? 'done' : 'loading');
   const [errorText, setErrorText] = useState('');
   const [items, setItems] = useState<MealItem[]>(scan.items);
   const [aiCount, setAiCount] = useState(0); // how many foods the AI found
   const [unknown, setUnknown] = useState<string[]>([]); // foods the AI saw that are not in our table
-  const [picker, setPicker] = useState<{ mode: 'add' } | { mode: 'replace'; index: number } | null>(null);
+  // A plate without a photo opens the food list straight away.
+  const [picker, setPicker] = useState<{ mode: 'add' } | { mode: 'replace'; index: number } | null>(
+    scan.manual && scan.items.length === 0 ? { mode: 'add' } : null,
+  );
 
   // Ask the scan API about the photo (once). No photo → go back to the camera.
   useEffect(() => {
+    if (scan.manual) return; // no photo: nothing to ask the AI
     if (!scan.photoBase64) {
       router.replace('/scan');
       return;
@@ -65,7 +69,7 @@ export default function ScanResultScreen() {
     return () => {
       cancelled = true;
     };
-  }, [scan.photoBase64, scan.items.length]);
+  }, [scan.photoBase64, scan.items.length, scan.manual]);
 
   const totals = mealTotals(items);
   const look = bandColor[totals.band];
@@ -102,9 +106,15 @@ export default function ScanResultScreen() {
 
   return (
     <View style={styles.screen}>
-      <StatusBar style="light" />
+      <StatusBar style={scan.manual ? 'dark' : 'light'} />
       <ScrollView contentContainerStyle={{ paddingBottom: insets.bottom + 28 }} showsVerticalScrollIndicator={false}>
-        {scan.photoUri ? <Image source={{ uri: scan.photoUri }} style={styles.photo} contentFit="cover" /> : <View style={styles.photo} />}
+        {scan.manual ? (
+          <View style={{ height: insets.top + 72 }} /> // no photo: just room for the back button
+        ) : scan.photoUri ? (
+          <Image source={{ uri: scan.photoUri }} style={styles.photo} contentFit="cover" />
+        ) : (
+          <View style={styles.photo} />
+        )}
 
         <View style={styles.sheet}>
           <View style={styles.headRow}>
