@@ -10,6 +10,7 @@ export type Profile = {
   districtId: string | null;
   familyPhone: string; // 10 digits after +880, e.g. "1819234567". Empty = not given.
   reminder: boolean; // remind 1 hour before iftar (feature N2)
+  pillReminder: boolean; // remind 30 min before sehri ends to take medicine as the doctor said (tablet/insulin users)
   onboarded: boolean; // true once the 2 setup steps are finished
 };
 
@@ -25,6 +26,7 @@ export const emptyProfile: Profile = {
   districtId: null,
   familyPhone: '',
   reminder: true,
+  pillReminder: true,
   onboarded: false,
 };
 
@@ -79,6 +81,7 @@ export type MealPlan = {
   walk15: boolean;
   peakNow: number; // estimated peak of the plate as scanned (mmol/L)
   peakAfter: number; // estimated peak with the changes (mmol/L)
+  meal?: 'iftar' | 'sehri'; // which meal it was (older saved plans have none = iftar)
 };
 
 const MEALS_KEY = 'roza-safe/meals';

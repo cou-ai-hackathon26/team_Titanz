@@ -30,9 +30,10 @@ function withDigitFont(node: ReactNode, digitFont: string): ReactNode {
   return node; // other elements (e.g. nested <Txt>) handle themselves
 }
 
-// Android sometimes measures Bangla words a little too narrow and drops the last word
-// (e.g. "জানি না" showed as "জানি"). The "simple" line breaking measures them correctly.
-const androidFix = Platform.OS === 'android' ? ({ textBreakStrategy: 'simple' } as const) : {};
+// Android measures Bangla text a few pixels too narrow, so the last letter (or word) got cut off
+// ("হোম" showed as "হো", "চট্টগ্রাম" as "চট্টগ্রা"). A plain space at the end is counted when the
+// text is measured but may hang past the edge when it is drawn, so the last letter gets room. It is invisible.
+const ROOM = Platform.OS === 'android' ? ' ' : '';
 
 // Use this instead of <Text> for any Bangla text. Works exactly like <Text>.
 export default function Txt({ style, children, ...rest }: TextProps) {
@@ -40,8 +41,9 @@ export default function Txt({ style, children, ...rest }: TextProps) {
   const digitFont = family ? digitFontFor[family] : undefined;
   return (
     // key={family}: when the font changes (e.g. a chip turns bold when picked), draw it fresh so it is re-measured
-    <Text key={family} style={style} {...androidFix} {...rest}>
+    <Text key={family} style={style} {...rest}>
       {digitFont ? withDigitFont(children, digitFont) : children}
+      {ROOM}
     </Text>
   );
 }

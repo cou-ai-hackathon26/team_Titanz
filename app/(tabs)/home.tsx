@@ -11,7 +11,7 @@ import { loadProfile, loadReadings, loadMealPlans, Profile, Reading, MealPlan } 
 import { findDistrict, fastTimes, formatClock, District } from '../../lib/places';
 import { adviceFor } from '../../lib/hypo';
 import { FORECAST } from '../../lib/forecast';
-import { dayPart, hoursAndMinutes, minutesOfDay, sameDay, shortDate, WEEKDAYS_BN } from '../../lib/time';
+import { dayKey, dayPart, hoursAndMinutes, minutesOfDay, sameDay, shortDate, WEEKDAYS_BN } from '../../lib/time';
 import { toBanglaDigits } from '../../lib/bangla';
 import { colors, fonts, radius } from '../../theme/tokens';
 import { useGlide } from '../../lib/motion';
@@ -232,8 +232,19 @@ export default function HomeScreen() {
             ) : null}
           </View>
           <View style={styles.week}>
-            {week.map((d) => (
-              <View key={d.day.toISOString()} style={[styles.day, d.isToday ? styles.today : null]}>
+            {week.map((d) => {
+              // A day with a saved plan or reading can be tapped to see it in History.
+              const hasData = d.status !== 'none' || readings.some((r) => sameDay(new Date(r.date), d.day));
+              return (
+              <PressScale
+                key={d.day.toISOString()}
+                pressedScale={0.9}
+                disabled={!hasData}
+                onPress={() => router.navigate({ pathname: '/history', params: { day: dayKey(d.day) } })}
+                accessibilityRole="button"
+                accessibilityLabel={`${WEEKDAYS_BN[d.day.getDay()]} ${d.day.getDate()}${hasData ? ', তথ্য দেখুন' : ', কোনো তথ্য নেই'}`}
+                style={[styles.day, d.isToday ? styles.today : null]}
+              >
                 <Text style={styles.dayName}>{WEEKDAYS_BN[d.day.getDay()]}</Text>
                 <Text style={[styles.dayNumber, d.isToday ? styles.dayNumberToday : null]}>{toBanglaDigits(d.day.getDate())}</Text>
                 <View
@@ -242,8 +253,9 @@ export default function HomeScreen() {
                     { backgroundColor: d.status === 'safe' ? colors.riskLow : d.status === 'high' ? colors.riskHigh : colors.borderDefault },
                   ]}
                 />
-              </View>
-            ))}
+              </PressScale>
+              );
+            })}
           </View>
           {daysWithPlan === 0 ? <Text style={styles.weekHint}>ইফতারের প্লেট স্ক্যান করে পরিকল্পনা রাখলে এখানে দেখা যাবে।</Text> : null}
         </View>

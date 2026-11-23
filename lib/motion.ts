@@ -10,6 +10,8 @@ export const SPRING = {
   soft: { stiffness: 160, damping: 22, mass: 1 },
   // A finger pressing something (quick and tight).
   press: { stiffness: 440, damping: 30, mass: 1 },
+  // A playful arrival with one small bounce (quiz questions).
+  bouncy: { stiffness: 230, damping: 17, mass: 1 },
 } as const;
 
 // Simple timings for fades.

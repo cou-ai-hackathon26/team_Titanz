@@ -25,6 +25,8 @@ export default function IftarScreen() {
   const [phone, setPhone] = useState(''); // 10 digits after +880
   const [reminder, setReminder] = useState(true);
   const [reminderNote, setReminderNote] = useState(''); // shown if the phone blocks notifications
+  const [pillReminder, setPillReminder] = useState(true);
+  const [takesMedicine, setTakesMedicine] = useState(false); // only tablet / insulin users see the sehri medicine reminder
   const [pickerOpen, setPickerOpen] = useState(false);
 
   // Fill in anything the user already saved.
@@ -33,6 +35,8 @@ export default function IftarScreen() {
       setDistrictId(p.districtId);
       setPhone(p.familyPhone);
       setReminder(p.reminder);
+      setPillReminder(p.pillReminder);
+      setTakesMedicine(p.treatment === 'tablets' || p.treatment === 'insulin');
     });
   }, []);
 
@@ -48,18 +52,19 @@ export default function IftarScreen() {
   }
 
   // Turning the reminder on asks the phone for notification permission straight away.
-  async function onReminderChange(on: boolean) {
+  async function onReminderChange(on: boolean, set: (v: boolean) => void = setReminder) {
     setReminderNote('');
-    if (!on) return setReminder(false);
+    if (!on) return set(false);
     const allowed = await askReminderPermission();
-    setReminder(allowed);
+    set(allowed);
     if (!allowed) setReminderNote('ফোনের সেটিংসে রোজা-সেফের নোটিফিকেশন চালু করুন, তারপর আবার চেষ্টা করুন।');
   }
 
   // Save everything, mark setup as done, and start the risk check.
   async function finish() {
-    const allowed = reminder ? await askReminderPermission() : false;
-    await saveProfile({ districtId, familyPhone: phone, reminder: reminder && allowed, onboarded: true });
+    const wantsAny = reminder || (takesMedicine && pillReminder);
+    const allowed = wantsAny ? await askReminderPermission() : false;
+    await saveProfile({ districtId, familyPhone: phone, reminder: reminder && allowed, pillReminder: pillReminder && allowed, onboarded: true });
     await refreshReminders(); // schedule (or cancel) the pre-iftar notifications
     if (editing) goBack('/settings');
     else router.push('/risk-quiz');
@@ -119,6 +124,13 @@ export default function IftarScreen() {
         <Text style={styles.reminderText}>ইফতারের ১ ঘণ্টা আগে শরীর চেক করার কথা মনে করিয়ে দিন</Text>
         <Toggle value={reminder} onChange={onReminderChange} label="ইফতারের আগে মনে করিয়ে দিন" />
       </View>
+      {takesMedicine ? (
+        <View style={styles.reminder}>
+          <Icon name="medication" size={22} />
+          <Text style={styles.reminderText}>সেহরি শেষ হওয়ার ৩০ মিনিট আগে ওষুধের কথা মনে করিয়ে দিন</Text>
+          <Toggle value={pillReminder} onChange={(on) => onReminderChange(on, setPillReminder)} label="সেহরির ওষুধের কথা মনে করিয়ে দিন" />
+        </View>
+      ) : null}
       {reminderNote ? <Text style={[styles.help, styles.error]}>{reminderNote}</Text> : null}
 
       <PickerSheet

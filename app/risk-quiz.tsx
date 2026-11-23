@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, ComponentRef } from 'react';
-import { View, StyleSheet, ScrollView } from 'react-native';
+import { View, StyleSheet, ScrollView, Animated } from 'react-native';
 import { router } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -8,6 +8,8 @@ import Button from '../components/Button';
 import BackButton from '../components/BackButton';
 import QuizAnswer from '../components/QuizAnswer';
 import Icon from '../components/Icon';
+import SlideIn from '../components/SlideIn';
+import { SPRING } from '../lib/motion';
 import { goBack } from '../lib/nav';
 import { loadProfile, saveRisk, Profile } from '../lib/storage';
 import { QUICK_QUIZ_IDS, DarAnswers, getElement, scoreDar, treatmentOptionIds, treatmentQuestion } from '../lib/dar';
@@ -42,6 +44,7 @@ export default function RiskQuizScreen() {
   const scrollRef = useRef<ComponentRef<typeof ScrollView>>(null);
   const [plan, setPlan] = useState<ReturnType<typeof planQuiz> | null>(null);
   const [index, setIndex] = useState(0); // which question we are on
+  const [direction, setDirection] = useState<1 | -1>(1); // which way the next question slides in
   const [answers, setAnswers] = useState<DarAnswers>({});
   const [saving, setSaving] = useState(false); // stops a double tap from saving twice
 
@@ -49,6 +52,13 @@ export default function RiskQuizScreen() {
   useEffect(() => {
     loadProfile().then((p) => setPlan(planQuiz(p)));
   }, []);
+
+  // The progress bar glides to the new length.
+  const progress = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    if (!plan) return;
+    Animated.spring(progress, { toValue: (index + 1) / plan.ids.length, ...SPRING.soft, useNativeDriver: false }).start();
+  }, [index, plan, progress]);
 
   // Scroll back to the top whenever the question changes.
   useEffect(() => {
@@ -72,7 +82,10 @@ export default function RiskQuizScreen() {
 
   // Go to the previous question, or leave the quiz from the first one.
   function previous() {
-    if (index > 0) setIndex(index - 1);
+    if (index > 0) {
+      setDirection(-1);
+      setIndex(index - 1);
+    }
     else goBack('/iftar');
   }
 
@@ -80,6 +93,7 @@ export default function RiskQuizScreen() {
   async function next() {
     if (!picked || !plan || saving) return;
     if (!isLast) {
+      setDirection(1);
       setIndex(index + 1);
       return;
     }
@@ -107,9 +121,13 @@ export default function RiskQuizScreen() {
         </View>
 
         <View style={styles.progressTrack} accessibilityRole="progressbar" accessibilityValue={{ min: 0, max: total, now: index + 1 }}>
-          <View style={[styles.progressFill, { width: `${((index + 1) / total) * 100}%` }]} />
+          <Animated.View
+            style={[styles.progressFill, { width: progress.interpolate({ inputRange: [0, 1], outputRange: ['0%', '100%'] }) }]}
+          />
         </View>
 
+        {/* The question and its answers slide in together (new key = plays again) */}
+        <SlideIn key={element.id} from={direction} style={styles.slide}>
         <View style={styles.topic}>
           <Icon name={element.topicIcon} size={16} />
           <Text style={styles.topicText}>{element.topicBn}</Text>
@@ -138,6 +156,7 @@ export default function RiskQuizScreen() {
             <Text style={styles.hintText}>{element.hintBn}</Text>
           </View>
         ) : null}
+        </SlideIn>
       </ScrollView>
 
       <View style={[styles.bottom, { paddingBottom: Math.max(16, insets.bottom + 12) }]}>
@@ -177,6 +196,7 @@ const styles = StyleSheet.create({
   questionBn: { fontFamily: fonts.banglaBold, fontSize: 28, lineHeight: 38, color: colors.textPrimary },
   questionEn: { fontFamily: fonts.english, fontSize: 15, lineHeight: 18, color: colors.textSecondary },
   answers: { gap: 10 },
+  slide: { gap: 20 },
   hint: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   hintText: { flex: 1, fontFamily: fonts.bangla, fontSize: 13, lineHeight: 18, color: colors.textSecondary },
   bottom: { flexDirection: 'row', gap: 12, paddingTop: 12, paddingHorizontal: 20, backgroundColor: colors.bgApp },

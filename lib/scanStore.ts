@@ -8,23 +8,29 @@ type CurrentScan = {
   items: MealItem[]; // the foods on the plate (after the user's edits)
   version: number; // goes up on every change, so the Forecast tab knows to start fresh
   manual: boolean; // true = no photo, the user adds the foods by hand
+  meal: 'iftar' | 'sehri' | null; // which meal; null = not chosen yet (the plate screen picks by time)
 };
 
-let current: CurrentScan = { photoUri: null, photoBase64: null, items: [], version: 0, manual: false };
+let current: CurrentScan = { photoUri: null, photoBase64: null, items: [], version: 0, manual: false, meal: null };
 
 // Starts a new scan with a fresh photo.
 export function setScanPhoto(uri: string, base64: string) {
-  current = { photoUri: uri, photoBase64: base64, items: [], version: current.version + 1, manual: false };
+  current = { photoUri: uri, photoBase64: base64, items: [], version: current.version + 1, manual: false, meal: null };
 }
 
 // Starts a plate without a photo: the user picks the foods from our list.
 export function startManualScan() {
-  current = { photoUri: null, photoBase64: null, items: [], version: current.version + 1, manual: true };
+  current = { photoUri: null, photoBase64: null, items: [], version: current.version + 1, manual: true, meal: null };
 }
 
 // Saves the food list (the forecast screen reads it).
 export function setScanItems(items: MealItem[]) {
   current = { ...current, items, version: current.version + 1 };
+}
+
+// Remembers whether this plate is sehri or iftar.
+export function setScanMeal(meal: 'iftar' | 'sehri') {
+  current = { ...current, meal };
 }
 
 // Reads the current scan.

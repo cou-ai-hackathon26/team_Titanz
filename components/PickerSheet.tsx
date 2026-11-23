@@ -1,6 +1,6 @@
-import { Modal, View, Pressable, ScrollView, StyleSheet } from 'react-native';
+import { Pressable, ScrollView, StyleSheet } from 'react-native';
 import Text from './Txt'; // <Text> that draws Bangla digits clearly
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import Sheet from './Sheet';
 import Icon from './Icon';
 import { colors, fonts, radius } from '../theme/tokens';
 
@@ -16,14 +16,11 @@ type Props = {
 };
 
 // A list that slides up from the bottom so the user can pick one item (e.g. their district).
+// Swipe it down or tap outside to close.
 export default function PickerSheet({ visible, title, options, selectedId, onPick, onClose }: Props) {
-  const insets = useSafeAreaInsets();
   return (
-    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
-      <Pressable style={styles.backdrop} onPress={onClose} accessibilityLabel="বন্ধ করুন (Close)" />
-      <View style={[styles.sheet, { paddingBottom: insets.bottom + 12 }]}>
-        <Text style={styles.title}>{title}</Text>
-        <ScrollView>
+    <Sheet visible={visible} onClose={onClose} title={title} maxHeight="72%">
+        <ScrollView contentContainerStyle={styles.list}>
           {options.map((o) => {
             const selected = o.id === selectedId;
             return (
@@ -40,22 +37,12 @@ export default function PickerSheet({ visible, title, options, selectedId, onPic
             );
           })}
         </ScrollView>
-      </View>
-    </Modal>
+    </Sheet>
   );
 }
 
 const styles = StyleSheet.create({
-  backdrop: { flex: 1, backgroundColor: 'rgba(16,35,26,0.4)' },
-  sheet: {
-    maxHeight: '70%',
-    backgroundColor: colors.bgSurface,
-    borderTopLeftRadius: radius.card,
-    borderTopRightRadius: radius.card,
-    paddingTop: 20,
-    paddingHorizontal: 16,
-  },
-  title: { fontFamily: fonts.banglaBold, fontSize: 20, lineHeight: 28, color: colors.textPrimary, paddingHorizontal: 8, marginBottom: 8 },
+  list: { paddingHorizontal: 16 },
   row: {
     minHeight: 52,
     paddingHorizontal: 16,

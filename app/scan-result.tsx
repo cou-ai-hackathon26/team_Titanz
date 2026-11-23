@@ -10,7 +10,11 @@ import Icon from '../components/Icon';
 import Stepper from '../components/Stepper';
 import PickerSheet from '../components/PickerSheet';
 import CarbScale from '../components/CarbScale';
-import { getScan, setScanItems } from '../lib/scanStore';
+import { getScan, setScanItems, setScanMeal } from '../lib/scanStore';
+import ChoiceChip from '../components/ChoiceChip';
+import { loadProfile } from '../lib/storage';
+import { findDistrict, fastTimes } from '../lib/places';
+import { mealForTime, minutesOfDay } from '../lib/time';
 import { scanPlate, LOW_CONFIDENCE } from '../lib/scanApi';
 import { FOODS, FOOD_BY_ID, unitBn } from '../lib/foods';
 import { mealTotals, foodImpact, CarbBand, MealItem } from '../lib/meal';
@@ -40,6 +44,26 @@ export default function ScanResultScreen() {
   const [aiCount, setAiCount] = useState(0); // how many foods the AI found
   const [unknown, setUnknown] = useState<string[]>([]); // foods the AI saw that are not in our table
   // A plate without a photo opens the food list straight away.
+  const [meal, setMeal] = useState<'iftar' | 'sehri'>(scan.meal ?? 'iftar');
+
+  // Sehri or iftar: picked automatically from the time of day and the district's sehri time (user can change it).
+  useEffect(() => {
+    if (scan.meal) return; // already chosen (e.g. came back from the forecast)
+    loadProfile().then((p) => {
+      const district = findDistrict(p.districtId);
+      const sehriEnd = district ? fastTimes(district).sehriEnd : 4 * 60 + 30; // about 4:30 AM if no district
+      const auto = mealForTime(minutesOfDay(new Date()), sehriEnd);
+      setMeal(auto);
+      setScanMeal(auto);
+    });
+  }, [scan.meal]);
+
+  // The user changes sehri / iftar by hand.
+  function pickMeal(m: 'iftar' | 'sehri') {
+    setMeal(m);
+    setScanMeal(m);
+  }
+
   const [picker, setPicker] = useState<{ mode: 'add' } | { mode: 'replace'; index: number } | null>(
     scan.manual && scan.items.length === 0 ? { mode: 'add' } : null,
   );
@@ -119,8 +143,8 @@ export default function ScanResultScreen() {
         <View style={styles.sheet}>
           <View style={styles.headRow}>
             <View>
-              <Text style={styles.title}>আপনার ইফতার</Text>
-              <Text style={styles.titleEn}>Your iftar plate</Text>
+              <Text style={styles.title}>{meal === 'sehri' ? 'আপনার সেহরি' : 'আপনার ইফতার'}</Text>
+              <Text style={styles.titleEn}>{meal === 'sehri' ? 'Your sehri plate' : 'Your iftar plate'}</Text>
             </View>
             {status === 'done' && aiCount > 0 ? (
               <View style={styles.aiChip}>
@@ -128,6 +152,11 @@ export default function ScanResultScreen() {
                 <Text style={styles.aiChipText}>AI · {bn(aiCount)}টি খাবার</Text>
               </View>
             ) : null}
+          </View>
+
+          <View style={styles.mealRow} accessibilityRole="radiogroup" accessibilityLabel="কোন খাবার? (Which meal?)">
+            <ChoiceChip label="ইফতার" selected={meal === 'iftar'} onPress={() => pickMeal('iftar')} />
+            <ChoiceChip label="সেহরি" selected={meal === 'sehri'} onPress={() => pickMeal('sehri')} />
           </View>
 
           {status === 'loading' ? (
@@ -264,6 +293,7 @@ const styles = StyleSheet.create({
     gap: 18,
   },
   headRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  mealRow: { flexDirection: 'row', gap: 10 },
   title: { fontFamily: fonts.banglaBold, fontSize: 24, lineHeight: 32, color: colors.textPrimary },
   titleEn: { fontFamily: fonts.english, fontSize: 14, lineHeight: 17, color: colors.textSecondary },
   aiChip: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: colors.bgPage, borderRadius: radius.pill, paddingHorizontal: 12, paddingVertical: 6 },

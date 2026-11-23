@@ -41,3 +41,15 @@ export function reminderTime(day: Date, iftarMinutes: number, minutesBefore = 60
   at.setMinutes(iftarMinutes - minutesBefore);
   return at;
 }
+
+// "2026-11-23" for a date (local time). Used to link a day on Home to that day in History.
+export function dayKey(d: Date): string {
+  const p = (n: number) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
+}
+
+// Which meal a plate most likely is, from the time it is eaten:
+// from midnight until 1 hour after sehri ends → sehri; the rest of the day → iftar (and the evening meal).
+export function mealForTime(nowMinutes: number, sehriEndMinutes: number): 'sehri' | 'iftar' {
+  return nowMinutes < sehriEndMinutes + 60 ? 'sehri' : 'iftar';
+}

@@ -30,3 +30,12 @@ test('reminderTime is 1 hour before iftar on that day', async () => {
   assert.equal(at.getHours(), 17);
   assert.equal(at.getMinutes(), 5);
 });
+
+test('dayKey and mealForTime', async () => {
+  const { dayKey, mealForTime } = await import('../../lib/time.ts');
+  assert.equal(dayKey(new Date(2026, 10, 3, 23, 59)), '2026-11-03');
+  const sehriEnd = 4 * 60 + 50; // 4:50 AM
+  assert.equal(mealForTime(3 * 60 + 30, sehriEnd), 'sehri'); // 3:30 AM
+  assert.equal(mealForTime(5 * 60 + 30, sehriEnd), 'sehri'); // just after sehri ends
+  assert.equal(mealForTime(18 * 60, sehriEnd), 'iftar'); // 6 PM
+});

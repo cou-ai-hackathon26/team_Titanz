@@ -87,6 +87,7 @@ function ForecastView() {
       walk15: whatIf.walk15,
       peakNow: now.peak,
       peakAfter: after.peak,
+      meal: getScan().meal ?? 'iftar',
     });
     setSaved(true);
     goHomeFresh();
@@ -105,7 +106,7 @@ function ForecastView() {
         <FadeIn delay={0}>
         <View style={styles.card}>
           <View style={styles.headRow}>
-            <Text style={styles.headText}>ইফতারের পর সর্বোচ্চ সুগার</Text>
+            <Text style={styles.headText}>{getScan().meal === 'sehri' ? 'সেহরির' : 'ইফতারের'} পর সর্বোচ্চ সুগার</Text>
             <View style={styles.estimateChip}>
               <Icon name="info" size={16} />
               <Text style={styles.estimateText}>আনুমানিক · Estimate</Text>
@@ -131,7 +132,7 @@ function ForecastView() {
           </View>
 
           <Text style={[styles.summary, { color: zoneColor(after.zone) }]}>{summary(after)}</Text>
-          <Text style={styles.assume}>ইফতারের আগে সুগার {bn1(FORECAST.BASELINE_DEFAULT)} mmol/L ধরে হিসাব।</Text>
+          <Text style={styles.assume}>খাওয়ার আগে সুগার {bn1(FORECAST.BASELINE_DEFAULT)} mmol/L ধরে হিসাব।</Text>
         </View>
         </FadeIn>
 
