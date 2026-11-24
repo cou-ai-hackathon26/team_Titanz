@@ -35,7 +35,7 @@ Read `CLAUDE.md` / `AGENTS.md`, then `docs/RULES.md`, then this file. `docs/PROG
 ## Things that bit us (don't undo)
 - Android cut the last Bangla letter/word → `components/Txt.tsx` adds a trailing space on Android. Keep it.
 - Gemini `gemini-4-hydrogen` thinks "high" by default → scans took 90 s. `api/providers/gemini.ts` sends `thinkingConfig.thinkingLevel: 'low'` → 6–16 s. Keep it.
-- Gemini free tier = 20 requests/day per Google project. Backups: `GEMINI_API_KEY_2…5`, then Groq (`GROQ_API_KEY`, ~1 scan/min: 1,000 output tokens/min), then Claude (if `ANTHROPIC_API_KEY`). Groq is not yet proven on a real photo.
+- Gemini free tier = 20 requests/day per Google project. Backups: `GEMINI_API_KEY_2…5`, then OpenAI (`OPENAI_API_KEY`, `gpt-6-luna`), then Groq (`GROQ_API_KEY`, ~1 scan/min: 1,000 output tokens/min), then Claude (if `ANTHROPIC_API_KEY`). Groq is not yet proven on a real photo.
 - `expo-image-picker` `cameraPermission: false` removed the CAMERA permission → keep it out of `app.json`.
 - Hackathon challenges (both done, committed): (1) household plate comparison `app/compare.tsx`; (2) unrecognised food → forecast marked "অসম্পূর্ণ", "≥" numbers, never "safe" (`lib/plateCheck.ts`).
 - Safety rules: no dose advice anywhere; predictions are estimates/ranges; keys only in Vercel.

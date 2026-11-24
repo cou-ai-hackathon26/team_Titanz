@@ -1,5 +1,5 @@
 // POST /api/scan — reads an iftar plate photo with a vision AI and returns which foods are on it.
-// AI: Google Gemini by default (GEMINI_API_KEY, free tier), then Groq (GROQ_API_KEY, free) and Claude as backups.
+// AI: Google Gemini by default (GEMINI_API_KEY, free tier), then OpenAI, Groq (free) and Claude as backups.
 // The AI ONLY names foods and counts. All sugar maths happens in the app (lib/meal.ts, lib/forecast.ts).
 // API keys live only in Vercel env vars (or api/.env.local for local tests). Never put a key in the app.
 //
@@ -10,6 +10,7 @@ import { FOOD_LIST } from '../food-list.ts';
 import { askGeminiWithBackups } from '../providers/gemini.ts';
 import { askClaude } from '../providers/claude.ts';
 import { askGroq, hasGroq } from '../providers/groq.ts';
+import { askOpenAI, hasOpenAI } from '../providers/openai.ts';
 import { ScanError } from '../providers/scanError.ts';
 
 const QUESTION = 'Which foods are on this plate, and how many of each?';
@@ -79,7 +80,7 @@ export function OPTIONS(): Response {
 
 // Opening the address in a browser: say the server is running (never shows any key).
 export function GET(): Response {
-  const hasKey = Boolean(process.env.GEMINI_API_KEY || process.env.GROQ_API_KEY || process.env.ANTHROPIC_API_KEY);
+  const hasKey = Boolean(process.env.GEMINI_API_KEY || process.env.OPENAI_API_KEY || process.env.GROQ_API_KEY || process.env.ANTHROPIC_API_KEY);
   return json({ ok: true, service: 'Roza-Safe scan server', aiKeySet: hasKey, howToUse: 'The app sends photos here with POST.' });
 }
 
@@ -104,18 +105,51 @@ export function cleanAnswer(raw: { items?: ScanItem[]; unknown?: string[] }) {
   return { items: [...merged.values()], unknown };
 }
 
+// Gemini answers a used-up daily quota very slowly (~90 s). So: give the whole Gemini step at most 25 s,
+// and once it says "daily limit used up", skip it for 30 minutes (remembered while this server copy stays warm).
+const GEMINI_MAX_MS = 25_000;
+const SKIP_GEMINI_MS = 30 * 60_000;
+let geminiOutUntil = 0;
+
+// Rejects with a "busy" error if the promise takes longer than `ms`, so the next AI can take over.
+function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    const timer = setTimeout(() => reject(new ScanError(503, 'The AI is busy right now, please try again in a minute')), ms);
+    promise.then(
+      (v) => (clearTimeout(timer), resolve(v)),
+      (e) => (clearTimeout(timer), reject(e)),
+    );
+  });
+}
+
 // Asks the AI services in order until one answers (see the comment in POST).
 async function askWithFallback(image: string) {
   if (process.env.SCAN_PROVIDER === 'claude') return askClaude(image, SYSTEM_PROMPT, ANSWER_SCHEMA, QUESTION);
   if (process.env.SCAN_PROVIDER === 'groq') return askGroq(image, SYSTEM_PROMPT, ANSWER_SCHEMA, QUESTION);
+  if (process.env.SCAN_PROVIDER === 'openai') return askOpenAI(image, SYSTEM_PROMPT, ANSWER_SCHEMA, QUESTION);
   // True when another AI service might still answer (this one is out of quota, busy, or has no/a wrong key).
   const tryNext = (error: unknown) => error instanceof ScanError && (error.status === 429 || error.status === 503 || /key/i.test(error.message));
   let lastError: unknown;
-  try {
-    return await askGeminiWithBackups(image, SYSTEM_PROMPT, ANSWER_SCHEMA, QUESTION);
-  } catch (error) {
-    if (!tryNext(error)) throw error;
-    lastError = error;
+  if (Date.now() < geminiOutUntil) {
+    lastError = new ScanError(429, 'Daily free AI limit used up'); // Gemini said so recently: don't wait for it again
+  } else {
+    try {
+      return await withTimeout(askGeminiWithBackups(image, SYSTEM_PROMPT, ANSWER_SCHEMA, QUESTION), GEMINI_MAX_MS);
+    } catch (error) {
+      if (error instanceof ScanError && /daily/i.test(error.message)) geminiOutUntil = Date.now() + SKIP_GEMINI_MS;
+      if (!tryNext(error)) throw error;
+      lastError = error;
+    }
+  }
+  if (hasOpenAI()) {
+    try {
+      return await askOpenAI(image, SYSTEM_PROMPT, ANSWER_SCHEMA, QUESTION);
+    } catch (error) {
+      console.error('OpenAI backup failed:', error instanceof Error ? error.message : error);
+      // A wrong model name or key on OUR side (500) should not stop the free backups below.
+      if (!tryNext(error) && !(error instanceof ScanError && error.status === 500)) throw error;
+      lastError = error;
+    }
   }
   if (hasGroq()) {
     try {
@@ -140,8 +174,8 @@ export async function POST(request: Request): Promise<Response> {
   }
   if (typeof image !== 'string' || image.length < 100) return json({ error: 'Missing photo' }, 400);
   if (image.length > MAX_IMAGE_CHARS) return json({ error: 'Photo too large' }, 413);
-  // Which AI to ask: SCAN_PROVIDER=claude or =groq → only that one. Otherwise Gemini (all keys in turn);
-  // if Gemini is out of quota or busy: Groq (free) if GROQ_API_KEY is set, then Claude if ANTHROPIC_API_KEY is set.
+  // Which AI to ask: SCAN_PROVIDER=claude / groq / openai → only that one. Otherwise Gemini (all keys in turn);
+  // if Gemini is out of quota or busy: OpenAI (OPENAI_API_KEY), then Groq (free, GROQ_API_KEY), then Claude (ANTHROPIC_API_KEY).
   try {
     const answer = await askWithFallback(image);
     const cleaned = cleanAnswer(answer.raw as { items?: ScanItem[]; unknown?: string[] });
