@@ -2,11 +2,15 @@
 // Everything is scheduled on the phone itself. No server, no account, works offline.
 import { Platform } from 'react-native';
 import * as Notifications from 'expo-notifications';
+import Constants, { ExecutionEnvironment } from 'expo-constants';
 import { loadProfile } from './storage';
 import { findDistrict, fastTimes } from './places';
 import { reminderTime } from './time';
 
 const CHANNEL_ID = 'iftar-reminder';
+// Expo Go (the test app used while developing) can't create our notification channel on Android.
+// The real APK can, so reminders are only scheduled there.
+const IN_EXPO_GO = Constants.executionEnvironment === ExecutionEnvironment.StoreClient || Constants.appOwnership === 'expo';
 const PILL_MINUTES_BEFORE_SEHRI_END = 30;
 const DAYS_AHEAD = 14; // how many days of reminders we keep ready (refreshed every time the app opens)
 
@@ -29,7 +33,16 @@ export async function askReminderPermission(): Promise<boolean> {
 // the pre-iftar check (if on) and, for tablet/insulin users, the sehri medicine reminder (if on).
 // Safe to call often (on app open, after changing the district or the switch).
 export async function refreshReminders(): Promise<void> {
-  if (Platform.OS === 'web') return;
+  if (Platform.OS === 'web' || IN_EXPO_GO) return;
+  try {
+    await scheduleAll();
+  } catch (error) {
+    console.warn('Reminders could not be scheduled:', error instanceof Error ? error.message : error); // never block the app
+  }
+}
+
+// Does the actual work for refreshReminders.
+async function scheduleAll(): Promise<void> {
   await Notifications.cancelAllScheduledNotificationsAsync();
   const profile = await loadProfile();
   const district = findDistrict(profile.districtId);
