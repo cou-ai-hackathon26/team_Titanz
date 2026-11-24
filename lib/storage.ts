@@ -82,6 +82,7 @@ export type MealPlan = {
   peakNow: number; // estimated peak of the plate as scanned (mmol/L)
   peakAfter: number; // estimated peak with the changes (mmol/L)
   meal?: 'iftar' | 'sehri'; // which meal it was (older saved plans have none = iftar)
+  missing?: string[]; // foods that were not recognised, so the peak may be higher (incomplete forecast)
 };
 
 const MEALS_KEY = 'roza-safe/meals';

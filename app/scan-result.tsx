@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { View, StyleSheet, ScrollView, Pressable, ActivityIndicator } from 'react-native';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { Image } from 'expo-image';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -10,7 +10,8 @@ import Icon from '../components/Icon';
 import Stepper from '../components/Stepper';
 import PickerSheet from '../components/PickerSheet';
 import CarbScale from '../components/CarbScale';
-import { getScan, setScanItems, setScanMeal } from '../lib/scanStore';
+import { getScan, setScanItems, setScanMeal, setScanUnknown } from '../lib/scanStore';
+import { setFamilyPlate } from '../lib/compareStore';
 import ChoiceChip from '../components/ChoiceChip';
 import { loadProfile } from '../lib/storage';
 import { findDistrict, fastTimes } from '../lib/places';
@@ -37,12 +38,13 @@ type Status = 'loading' | 'done' | 'error';
 // glycemic load and carb level. Unsure foods are marked; any food can be added by hand.
 export default function ScanResultScreen() {
   const insets = useSafeAreaInsets();
+  const { compare } = useLocalSearchParams<{ compare?: string }>(); // 'family' = a family member's plate
   const scan = getScan();
   const [status, setStatus] = useState<Status>(scan.items.length || scan.manual ? 'done' : 'loading');
   const [errorText, setErrorText] = useState('');
   const [items, setItems] = useState<MealItem[]>(scan.items);
   const [aiCount, setAiCount] = useState(0); // how many foods the AI found
-  const [unknown, setUnknown] = useState<string[]>([]); // foods the AI saw that are not in our table
+  const [unknown, setUnknown] = useState<string[]>(scan.unknown); // foods the AI saw that are not in our table
   // A plate without a photo opens the food list straight away.
   const [meal, setMeal] = useState<'iftar' | 'sehri'>(scan.meal ?? 'iftar');
 
@@ -64,7 +66,7 @@ export default function ScanResultScreen() {
     setScanMeal(m);
   }
 
-  const [picker, setPicker] = useState<{ mode: 'add' } | { mode: 'replace'; index: number } | null>(
+  const [picker, setPicker] = useState<{ mode: 'add' } | { mode: 'replace'; index: number } | { mode: 'match'; name: string } | null>(
     scan.manual && scan.items.length === 0 ? { mode: 'add' } : null,
   );
 
@@ -72,7 +74,7 @@ export default function ScanResultScreen() {
   useEffect(() => {
     if (scan.manual) return; // no photo: nothing to ask the AI
     if (!scan.photoBase64) {
-      router.replace('/scan');
+      router.replace(compare ? { pathname: '/scan', params: { compare } } : '/scan');
       return;
     }
     if (scan.items.length) return; // came back from the forecast: keep the user's edits
@@ -107,7 +109,13 @@ export default function ScanResultScreen() {
   // Adds a food by hand, or swaps an unsure food for the right one.
   function pickFood(foodId: string) {
     if (!picker) return;
-    if (picker.mode === 'add') {
+    if (picker.mode === 'match') {
+      // The user says which of our foods the unrecognised one is most like: count it, and stop warning about it.
+      const existing = items.findIndex((i) => i.foodId === foodId);
+      if (existing >= 0) setCount(existing, items[existing].count + 1);
+      else setItems([...items, { foodId, count: 1 }]);
+      setUnknown(unknown.filter((u) => u !== picker.name));
+    } else if (picker.mode === 'add') {
       const existing = items.findIndex((i) => i.foodId === foodId);
       if (existing >= 0) setCount(existing, Math.max(1, items[existing].count));
       else setItems([...items, { foodId, count: 1 }]);
@@ -120,9 +128,16 @@ export default function ScanResultScreen() {
     setPicker(null);
   }
 
+  // Family plate: keep it and open the side-by-side comparison.
+  function openCompare() {
+    setFamilyPlate({ items, unknown, photoUri: scan.photoUri });
+    router.replace('/compare');
+  }
+
   // Saves the plate and opens the sugar forecast.
   function openForecast() {
     setScanItems(items);
+    setScanUnknown(unknown);
     router.navigate('/forecast'); // switch to the Forecast tab (closes camera + result screens)
   }
 
@@ -143,8 +158,8 @@ export default function ScanResultScreen() {
         <View style={styles.sheet}>
           <View style={styles.headRow}>
             <View>
-              <Text style={styles.title}>{meal === 'sehri' ? 'আপনার সেহরি' : 'আপনার ইফতার'}</Text>
-              <Text style={styles.titleEn}>{meal === 'sehri' ? 'Your sehri plate' : 'Your iftar plate'}</Text>
+              <Text style={styles.title}>{compare ? 'পরিবারের প্লেট' : meal === 'sehri' ? 'আপনার সেহরি' : 'আপনার ইফতার'}</Text>
+              <Text style={styles.titleEn}>{compare ? "Family member's plate" : meal === 'sehri' ? 'Your sehri plate' : 'Your iftar plate'}</Text>
             </View>
             {status === 'done' && aiCount > 0 ? (
               <View style={styles.aiChip}>
@@ -233,7 +248,26 @@ export default function ScanResultScreen() {
               </View>
 
               {unknown.length > 0 ? (
-                <Text style={styles.unknown}>তালিকার বাইরে: {unknown.join(', ')} (শর্করা হিসাবে ধরা হয়নি)</Text>
+                <View style={styles.unknownBox}>
+                  <View style={styles.unknownHead}>
+                    <Icon name="warning" size={20} color={colors.riskModerate} />
+                    <Text style={styles.unknownTitle}>AI এগুলো চিনতে পারেনি</Text>
+                  </View>
+                  <Text style={styles.unknownText}>
+                    মিলিয়ে না নিলে এগুলোর শর্করা হিসাবে থাকবে না, তাই পূর্বাভাস অসম্পূর্ণ দেখাবে।
+                  </Text>
+                  {unknown.map((name) => (
+                    <View key={name} style={styles.unknownRow}>
+                      <Text style={styles.unknownName} numberOfLines={1}>{name}</Text>
+                      <Pressable onPress={() => setPicker({ mode: 'match', name })} accessibilityRole="button" style={styles.unknownBtn}>
+                        <Text style={styles.unknownBtnText}>মিলিয়ে নিন</Text>
+                      </Pressable>
+                      <Pressable onPress={() => setUnknown(unknown.filter((u) => u !== name))} accessibilityRole="button" accessibilityLabel={`${name} বাদ দিন`} style={styles.unknownSkip}>
+                        <Text style={styles.unknownSkipText}>বাদ দিন</Text>
+                      </Pressable>
+                    </View>
+                  ))}
+                </View>
               ) : null}
 
               <Pressable
@@ -246,7 +280,11 @@ export default function ScanResultScreen() {
                 <Text style={styles.addText}>আরও খাবার যোগ করুন</Text>
               </Pressable>
 
-              <Button label="সুগার পূর্বাভাস দেখুন" sub="See sugar forecast" icon="show_chart" onPress={openForecast} disabled={!hasFood} />
+              {compare ? (
+                <Button label="দুটো প্লেট তুলনা করুন" sub="Compare plates" icon="favorite" onPress={openCompare} disabled={!hasFood} />
+              ) : (
+                <Button label="সুগার পূর্বাভাস দেখুন" sub="See sugar forecast" icon="show_chart" onPress={openForecast} disabled={!hasFood} />
+              )}
             </>
           )}
 
@@ -258,7 +296,7 @@ export default function ScanResultScreen() {
       </ScrollView>
 
       <Pressable
-        onPress={() => router.replace('/scan')}
+        onPress={() => router.replace(compare ? { pathname: '/scan', params: { compare } } : '/scan')}
         accessibilityRole="button"
         accessibilityLabel="আবার ছবি তুলুন (Retake)"
         style={[styles.backButton, { top: insets.top + 16 }]}
@@ -269,7 +307,7 @@ export default function ScanResultScreen() {
 
       <PickerSheet
         visible={picker !== null}
-        title={picker?.mode === 'replace' ? 'সঠিক খাবারটি বেছে নিন' : 'খাবার যোগ করুন'}
+        title={picker?.mode === 'replace' ? 'সঠিক খাবারটি বেছে নিন' : picker?.mode === 'match' ? `"${picker.name}" কোনটার মতো?` : 'খাবার যোগ করুন'}
         options={pickerOptions}
         selectedId={picker?.mode === 'replace' ? items[picker.index]?.foodId ?? null : null}
         onPick={pickFood}
@@ -322,7 +360,16 @@ const styles = StyleSheet.create({
   rowText: { flex: 1 },
   rowName: { fontFamily: fonts.banglaSemiBold, fontSize: 17, lineHeight: 23, color: colors.textPrimary },
   rowSub: { fontFamily: fonts.bangla, fontSize: 12, lineHeight: 16, color: colors.textSecondary },
-  unknown: { fontFamily: fonts.bangla, fontSize: 13, lineHeight: 18, color: colors.textSecondary },
+  unknownBox: { backgroundColor: colors.riskModerateSoft, borderRadius: radius.tile, padding: 14, gap: 8 },
+  unknownHead: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  unknownTitle: { fontFamily: fonts.banglaBold, fontSize: 15, lineHeight: 21, color: colors.textPrimary },
+  unknownText: { fontFamily: fonts.bangla, fontSize: 13, lineHeight: 19, color: colors.textPrimary },
+  unknownRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  unknownName: { flex: 1, fontFamily: fonts.banglaSemiBold, fontSize: 15, lineHeight: 21, color: colors.textPrimary },
+  unknownBtn: { backgroundColor: colors.bgBrandStrong, borderRadius: radius.pill, paddingHorizontal: 14, paddingVertical: 8 },
+  unknownBtnText: { fontFamily: fonts.banglaSemiBold, fontSize: 13, lineHeight: 18, color: colors.textOnBrand },
+  unknownSkip: { borderRadius: radius.pill, paddingHorizontal: 10, paddingVertical: 8 },
+  unknownSkipText: { fontFamily: fonts.banglaMedium, fontSize: 13, lineHeight: 18, color: colors.textSecondary },
   addRow: {
     flexDirection: 'row',
     alignItems: 'center',

@@ -68,7 +68,8 @@ export default function HistoryScreen() {
           <Text style={styles.empty}>{day ? 'এই দিনে কোনো পরিকল্পনা নেই।' : 'এখনো কোনো পরিকল্পনা রাখা হয়নি। প্লেট স্ক্যান করে "এই পরিকল্পনা রাখুন" চাপুন।'}</Text>
         ) : null}
         {plans.slice(0, 20).map((p, pi) => {
-          const safe = p.peakAfter <= FORECAST.SAFE_HIGH;
+          const incomplete = (p.missing?.length ?? 0) > 0; // some foods were not counted: never call it safe
+          const safe = !incomplete && p.peakAfter <= FORECAST.SAFE_HIGH;
           const foods = p.items.map((i) => `${FOOD_BY_ID[i.foodId]?.nameBn ?? i.foodId} ${toBanglaDigits(i.count)}`).join(', ');
           return (
             <FadeIn key={p.date} delay={Math.min(pi * 40, 320)}>
@@ -92,8 +93,8 @@ export default function HistoryScreen() {
                   সর্বোচ্চ সুগার প্রায় {toBanglaDigits(p.peakNow.toFixed(1))} → {toBanglaDigits(p.peakAfter.toFixed(1))} mmol/L
                 </Text>
               </View>
-              <View style={[styles.chip, { backgroundColor: safe ? colors.riskLowSoft : colors.riskHighSoft }]}>
-                <Text style={[styles.chipText, { color: safe ? colors.riskLow : colors.riskHigh }]}>{safe ? 'নিরাপদ' : 'বেশি'}</Text>
+              <View style={[styles.chip, { backgroundColor: incomplete ? colors.riskModerateSoft : safe ? colors.riskLowSoft : colors.riskHighSoft }]}>
+                <Text style={[styles.chipText, { color: incomplete ? colors.riskModerate : safe ? colors.riskLow : colors.riskHigh }]}>{incomplete ? 'অসম্পূর্ণ' : safe ? 'নিরাপদ' : 'বেশি'}</Text>
               </View>
               <Icon name="arrow_forward" size={18} color={colors.textSecondary} />
             </PressScale>

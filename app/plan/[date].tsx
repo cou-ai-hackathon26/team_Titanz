@@ -63,7 +63,8 @@ export default function PlanDetailScreen() {
   const totals = mealTotals(items);
   const before = forecast(items); // the saved plate, without the walk
   const after = forecast(items, { walk15: plan.walk15 }); // with the walk, if they planned one
-  const safe = plan.peakAfter <= FORECAST.SAFE_HIGH;
+  const missing = plan.missing ?? [];
+  const safe = missing.length === 0 && plan.peakAfter <= FORECAST.SAFE_HIGH;
   const mealBn = plan.meal === 'sehri' ? 'সেহরি' : 'ইফতার';
 
   return (
@@ -79,7 +80,9 @@ export default function PlanDetailScreen() {
               <Text style={styles.mealChipText}>{mealBn}</Text>
             </View>
             <View style={[styles.chip, { backgroundColor: safe ? colors.riskLowSoft : colors.riskHighSoft }]}>
-              <Text style={[styles.chipText, { color: safe ? colors.riskLow : colors.riskHigh }]}>{safe ? 'নিরাপদ সীমায়' : 'সীমার বেশি'}</Text>
+              <Text style={[styles.chipText, { color: safe ? colors.riskLow : colors.riskHigh }]}>
+                {missing.length ? 'অসম্পূর্ণ' : safe ? 'নিরাপদ সীমায়' : 'সীমার বেশি'}
+              </Text>
             </View>
           </View>
           <Text style={styles.when}>
@@ -89,6 +92,9 @@ export default function PlanDetailScreen() {
           <Text style={styles.peak}>
             {bn1(plan.peakNow)} → {bn1(plan.peakAfter)} <Text style={styles.unit}>mmol/L</Text>
           </Text>
+          {missing.length ? (
+            <Text style={styles.missing}>হিসাবে নেই: {missing.join(', ')} — আসল সুগার বেশি হতে পারে।</Text>
+          ) : null}
           <View style={styles.totalsRow}>
             <Text style={styles.small}>মোট শর্করা {bn0(totals.carbs)} g</Text>
             <Text style={styles.small}>গ্লাইসেমিক লোড {bn0(totals.gl)}</Text>
@@ -163,6 +169,7 @@ const styles = StyleSheet.create({
   peakLabel: { fontFamily: fonts.bangla, fontSize: 13, lineHeight: 18, color: colors.textSecondary },
   peak: { fontFamily: fonts.banglaBold, fontSize: 28, lineHeight: 36, color: colors.textPrimary },
   unit: { fontFamily: fonts.english, fontSize: 14, color: colors.textSecondary },
+  missing: { fontFamily: fonts.banglaMedium, fontSize: 13, lineHeight: 19, color: colors.riskHigh },
   totalsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
   cardTitle: { fontFamily: fonts.banglaBold, fontSize: 17, lineHeight: 23, color: colors.textPrimary },
   foodRow: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 4 },

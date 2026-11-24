@@ -46,7 +46,8 @@ function weekDays(plans: MealPlan[], now: Date) {
   return Array.from({ length: 7 }, (_, i) => {
     const day = new Date(now.getFullYear(), now.getMonth(), now.getDate() - (6 - i));
     const plan = plans.find((p) => sameDay(new Date(p.date), day)); // newest first, so this is the latest that day
-    const status = !plan ? 'none' : plan.peakAfter > FORECAST.SAFE_HIGH ? 'high' : 'safe';
+    // An incomplete plan (some foods not recognised) is never shown as safe.
+    const status = !plan ? 'none' : plan.peakAfter > FORECAST.SAFE_HIGH || (plan.missing?.length ?? 0) > 0 ? 'high' : 'safe';
     return { day, status, isToday: i === 6 };
   });
 }

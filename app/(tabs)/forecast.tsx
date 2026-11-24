@@ -12,7 +12,9 @@ import Toggle from '../../components/Toggle';
 import ForecastChart from '../../components/ForecastChart';
 import { goHomeFresh } from '../../lib/nav';
 import FadeIn from '../../components/FadeIn';
+import { checkPlate, missingWarning, unsureWarning } from '../../lib/plateCheck';
 import { getScan } from '../../lib/scanStore';
+import { startCompare } from '../../lib/compareStore';
 import { saveMealPlan } from '../../lib/storage';
 import { FOOD_BY_ID } from '../../lib/foods';
 import { forecast, forecastWith, noChanges, changedPlate, changeEffect, FORECAST, WhatIf, Zone, Forecast } from '../../lib/forecast';
@@ -57,6 +59,10 @@ export default function ForecastScreen() {
 function ForecastView() {
   const insets = useSafeAreaInsets();
   const items = getScan().items.filter((i) => i.count > 0);
+  // Anything the scan could not recognise makes this forecast incomplete (never a false promise).
+  const check = checkPlate(items, getScan().unknown);
+  const missingText = missingWarning(check);
+  const unsureText = unsureWarning(check);
   const [whatIf, setWhatIf] = useState<WhatIf>(() => noChanges(items));
   const [saved, setSaved] = useState(false);
 
@@ -88,6 +94,7 @@ function ForecastView() {
       peakNow: now.peak,
       peakAfter: after.peak,
       meal: getScan().meal ?? 'iftar',
+      missing: check.missing.length ? check.missing : undefined,
     });
     setSaved(true);
     goHomeFresh();
@@ -113,9 +120,22 @@ function ForecastView() {
             </View>
           </View>
 
+          {missingText ? (
+            <View style={styles.warnBox} accessibilityRole="alert">
+              <Icon name="warning" size={20} color={colors.riskHigh} />
+              <Text style={styles.warnText}>{missingText}</Text>
+            </View>
+          ) : null}
+          {unsureText ? (
+            <View style={[styles.warnBox, styles.unsureBox]}>
+              <Icon name="help" size={20} color={colors.riskModerate} />
+              <Text style={styles.warnText}>{unsureText}</Text>
+            </View>
+          ) : null}
+
           <View style={styles.tiles}>
-            <PeakTile label="এখনকার প্লেট" dot={colors.riskHigh} f={now} />
-            <PeakTile label="পরিবর্তনের পর" dot={colors.bgBrandStrong} f={after} />
+            <PeakTile label="এখনকার প্লেট" dot={colors.riskHigh} f={now} atLeast={!check.complete} />
+            <PeakTile label="পরিবর্তনের পর" dot={colors.bgBrandStrong} f={after} atLeast={!check.complete} />
           </View>
 
           <ForecastChart now={now} after={after} />
@@ -131,7 +151,13 @@ function ForecastView() {
             </View>
           </View>
 
-          <Text style={[styles.summary, { color: zoneColor(after.zone) }]}>{summary(after)}</Text>
+          {check.complete ? (
+            <Text style={[styles.summary, { color: zoneColor(after.zone) }]}>{summary(after)}</Text>
+          ) : (
+            <Text style={[styles.summary, { color: colors.riskHigh }]}>
+              কিছু খাবার হিসাবে নেই, তাই "নিরাপদ" বলা যাচ্ছে না। আসল সুগার দেখানো সংখ্যার চেয়ে বেশি হতে পারে।
+            </Text>
+          )}
           <Text style={styles.assume}>খাওয়ার আগে সুগার {bn1(FORECAST.BASELINE_DEFAULT)} mmol/L ধরে হিসাব।</Text>
         </View>
         </FadeIn>
@@ -166,6 +192,17 @@ function ForecastView() {
         </FadeIn>
 
         <Button label="এই পরিকল্পনা রাখুন" sub="Save this plan" icon="check" onPress={savePlan} disabled={saved} />
+        <Button
+          label="পরিবারের প্লেটের সাথে তুলনা"
+          sub="Compare with a family member's plate"
+          icon="favorite"
+          variant="Secondary"
+          onPress={() => {
+            // Keep my plate (with my changes), then scan the family member's plate.
+            startCompare({ items: changedPlate(items, whatIf).filter((i) => i.count > 0), unknown: check.missing, photoUri: getScan().photoUri });
+            router.push({ pathname: '/scan', params: { compare: 'family' } });
+          }}
+        />
 
         <View style={styles.disclaimer}>
           <Icon name="info" size={14} color={colors.textSecondary} />
@@ -177,17 +214,18 @@ function ForecastView() {
 }
 
 // A grey tile with the peak as a range (e.g. "১১.৩–১৫.৩ mmol/L"), coloured by where it lands.
-function PeakTile({ label, dot, f }: { label: string; dot: string; f: Forecast }) {
+// atLeast: some foods were not counted, so the real peak can only be higher ("কমপক্ষে" = at least).
+function PeakTile({ label, dot, f, atLeast = false }: { label: string; dot: string; f: Forecast; atLeast?: boolean }) {
   return (
     <View style={styles.tile} accessible accessibilityLabel={`${label}: ${f.peakLow.toFixed(1)} থেকে ${f.peakHigh.toFixed(1)} mmol/L`}>
       <View style={styles.tileLabelRow}>
         <View style={[styles.dot, { backgroundColor: dot }]} />
         <Text style={styles.tileLabel}>{label}</Text>
       </View>
-      <Text style={[styles.tileValue, { color: zoneColor(f.zone) }]} numberOfLines={1}>
-        {bn1(f.peakLow)}–{bn1(f.peakHigh)}
+      <Text style={[styles.tileValue, { color: atLeast && f.zone === 'safe' ? colors.riskModerate : zoneColor(f.zone) }]} numberOfLines={1}>
+        {atLeast ? `≥ ${bn1(f.peakLow)}` : `${bn1(f.peakLow)}–${bn1(f.peakHigh)}`}
       </Text>
-      <Text style={styles.tileUnit}>mmol/L</Text>
+      <Text style={styles.tileUnit}>{atLeast ? 'কমপক্ষে · mmol/L' : 'mmol/L'}</Text>
     </View>
   );
 }
@@ -211,6 +249,9 @@ function ControlRow(props: { icon: IconName; title: string; detail: string; effe
 }
 
 const styles = StyleSheet.create({
+  warnBox: { flexDirection: 'row', gap: 10, alignItems: 'flex-start', backgroundColor: colors.riskHighSoft, borderRadius: radius.tile, padding: 12 },
+  unsureBox: { backgroundColor: colors.riskModerateSoft },
+  warnText: { flex: 1, fontFamily: fonts.banglaMedium, fontSize: 14, lineHeight: 20, color: colors.textPrimary },
   screen: { flex: 1, backgroundColor: colors.bgApp },
   content: { paddingHorizontal: 20, gap: 16 },
   topBar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },

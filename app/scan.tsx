@@ -1,6 +1,6 @@
 import { useRef, useState, ComponentRef } from 'react';
 import { View, StyleSheet, Pressable, ActivityIndicator } from 'react-native';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { Image } from 'expo-image';
 import { CameraView, useCameraPermissions, CameraType } from 'expo-camera';
@@ -34,6 +34,9 @@ function Shade({ fromTop, height }: { fromTop: boolean; height: number }) {
 // the left button picks one from the gallery. Either way the photo goes to the result screen.
 export default function ScanCameraScreen() {
   const insets = useSafeAreaInsets();
+  // compare=family: this photo is a family member's plate, for the side-by-side comparison.
+  const { compare } = useLocalSearchParams<{ compare?: string }>();
+  const next = compare ? { pathname: '/scan-result' as const, params: { compare } } : '/scan-result';
   const cameraRef = useRef<ComponentRef<typeof CameraView>>(null);
   const [permission, requestPermission] = useCameraPermissions();
   const [facing, setFacing] = useState<CameraType>('back');
@@ -46,7 +49,7 @@ export default function ScanCameraScreen() {
   async function openPhoto(uri: string, width: number) {
     const photo = await preparePhoto(uri, width);
     setScanPhoto(photo.uri, photo.base64);
-    router.replace('/scan-result');
+    router.replace(next);
   }
 
   // Takes a photo with the camera.
@@ -79,7 +82,7 @@ export default function ScanCameraScreen() {
   // No photo: open the plate screen and pick the foods from our list by hand.
   function addByHand() {
     startManualScan();
-    router.replace('/scan-result');
+    router.replace(next);
   }
 
   // Camera permission not decided yet (a split second).
@@ -137,7 +140,7 @@ export default function ScanCameraScreen() {
         <Image source={require('../assets/scan/frame-corners.svg')} style={styles.corners} />
         <View style={styles.scanLine} />
         <View style={styles.hintChip}>
-          <Text style={styles.hintText}>পুরো প্লেটটি ফ্রেমের ভিতরে রাখুন</Text>
+          <Text style={styles.hintText}>{compare ? 'পরিবারের সদস্যের প্লেটটি ফ্রেমে রাখুন' : 'পুরো প্লেটটি ফ্রেমের ভিতরে রাখুন'}</Text>
         </View>
       </View>
 
