@@ -21,7 +21,7 @@ Read `CLAUDE.md` / `AGENTS.md`, then `docs/RULES.md`, then this file. `docs/PROG
 1. Nadim tests food size + add-it-yourself on the phone (Expo Go over USB, see below).
 2. Keep committing small changes (hackathon rule: at least once an hour today).
 3. Final APK: `npx eas-cli build -p android --profile preview --non-interactive --no-wait` (~15–20 min on the free plan). Install fast over USB: download the `.apk` from the build page, then `~/Library/Android/sdk/platform-tools/adb install -r file.apk`.
-4. New GitHub Release (e.g. v1.1) with that APK: `gh release create v1.1 roza-safe-v1.1.apk --title "Roza-Safe v1.1" --notes "..."`, then check README links (`/releases/latest`).
+4. New GitHub Release with that APK — automatic: `bash dev/release-apk.sh <eas-build-id> v1.2` (waits for the build, downloads, publishes). Manual way: `gh release create v1.1 roza-safe-v1.1.apk --title "Roza-Safe v1.1" --notes "..."`, then check README links (`/releases/latest`).
 5. README: add the demo video link when ready.
 
 ## How to run / test
