@@ -4,8 +4,8 @@ import assert from 'node:assert/strict';
 import { FOODS, FOOD_BY_ID } from '../../lib/foods.ts';
 import { mealTotals, carbBand, foodImpact } from '../../lib/meal.ts';
 
-test('Food table: 34 foods, unique ids, every food has a source and sane numbers', () => {
-  assert.equal(FOODS.length, 34);
+test('Food table: 35 foods, unique ids, every food has a source and sane numbers', () => {
+  assert.equal(FOODS.length, 35);
   assert.equal(new Set(FOODS.map((f) => f.id)).size, FOODS.length);
   for (const f of FOODS) {
     assert.ok(f.src.length > 10, `${f.id} needs a source`);

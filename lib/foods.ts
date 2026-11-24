@@ -153,6 +153,10 @@ export const FOODS: Food[] = [
     carbsPerUnit: 0.4, gi: 0, fiberPerUnit: 0, proteinPerUnit: 6.3, estimated: false,
     src: "Comp: USDA SR Legacy 'Egg, whole, raw' FDC 171287 (12.56 prot /100 g) - verify; FCTB 11_0005 egg boiled also available. No meaningful carbohydrate." },
 
+  { id: "omelette", nameBn: "ডিম ভাজি / অমলেট", nameEn: "Omelette (1 egg, with onion & chilli)", unit: "piece", portion: 65, portionUnit: "g",
+    carbsPerUnit: 1.3, gi: 0, fiberPerUnit: 0.2, proteinPerUnit: 6.5, estimated: true,
+    src: "ESTIMATE. Recipe: 1 egg (~50 g; USDA FDC 171287: 0.4 CHO, 6.3 prot) + ~10 g onion (~0.9 CHO, 0.2 fibre) + green chilli, fried in ~5 g oil. Carbohydrate negligible, so GI is not applied (same as boiled egg)." },
+
   { id: "shobji", nameBn: "সবজি", nameEn: "Mixed vegetable curry", unit: "bowl", portion: 150, portionUnit: "g",
     carbsPerUnit: 10, gi: 50, fiberPerUnit: 4, proteinPerUnit: 3, estimated: true,
     src: "ESTIMATE: potato (FCTB 05_0012), pumpkin (03_0028), brinjal (03_0005), gourds; GI 50 assumes some potato." },

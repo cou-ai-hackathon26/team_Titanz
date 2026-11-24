@@ -226,6 +226,13 @@ export const FOOD_LIST = [
     "portion": "50 g"
   },
   {
+    "id": "omelette",
+    "nameBn": "ডিম ভাজি / অমলেট",
+    "nameEn": "Omelette (1 egg, with onion & chilli)",
+    "unit": "piece",
+    "portion": "65 g"
+  },
+  {
     "id": "shobji",
     "nameBn": "সবজি",
     "nameEn": "Mixed vegetable curry",
