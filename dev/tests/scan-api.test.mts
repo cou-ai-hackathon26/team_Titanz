@@ -114,6 +114,40 @@ test('Backup keys: key 1 out of free quota (429) → key 2 answers', async () =>
   }
 });
 
+// Verify provider order and recovery without sending a real photo or using paid credits.
+for (const failure of ['quota', 'network']) {
+  test(`OpenAI ${failure} failure falls back to Gemini`, async () => {
+    const realFetch = globalThis.fetch;
+    const savedOpenAI = process.env.OPENAI_API_KEY;
+    const savedGemini = process.env.GEMINI_API_KEY;
+    process.env.OPENAI_API_KEY = 'test-openai';
+    process.env.GEMINI_API_KEY = 'test-gemini';
+    const urls: string[] = [];
+    globalThis.fetch = (async (url: string) => {
+      urls.push(url);
+      if (url.includes('api.openai.com')) {
+        if (failure === 'network') throw new TypeError('Network unavailable');
+        return new Response(JSON.stringify({ error: { message: 'quota exceeded' } }), { status: 429 });
+      }
+      return new Response(JSON.stringify({ candidates: [{ content: { parts: [{ text: '{"items":[],"unknown":[]}' }] } }], modelVersion: 'test-gemini' }), { status: 200 });
+    }) as typeof fetch;
+    try {
+      const response = await POST(new Request('http://x/api/scan', { method: 'POST', body: JSON.stringify({ image: 'a'.repeat(200) }) }));
+      assert.equal(response.status, 200);
+      assert.equal((await response.json()).model, 'test-gemini');
+      assert.equal(urls.length, 2);
+      assert.ok(urls[0].includes('api.openai.com'));
+      assert.ok(urls[1].includes('generativelanguage'));
+    } finally {
+      globalThis.fetch = realFetch;
+      if (savedOpenAI === undefined) delete process.env.OPENAI_API_KEY;
+      else process.env.OPENAI_API_KEY = savedOpenAI;
+      if (savedGemini === undefined) delete process.env.GEMINI_API_KEY;
+      else process.env.GEMINI_API_KEY = savedGemini;
+    }
+  });
+}
+
 test('Groq backup: Gemini out of daily quota → Groq reads the photo (JSON inside thinking text is still found)', async () => {
   const realFetch = globalThis.fetch;
   process.env.GEMINI_API_KEY = 'test-key';
@@ -152,7 +186,7 @@ test('Groq backup: Gemini out of daily quota → Groq reads the photo (JSON insi
   }
 });
 
-test('OpenAI backup: Gemini out of quota → OpenAI answers with a strict JSON schema and the photo', async () => {
+test('OpenAI first: answers before Gemini or Groq with a strict JSON schema and the photo', async () => {
   const realFetch = globalThis.fetch;
   process.env.GEMINI_API_KEY = 'test-key';
   process.env.OPENAI_API_KEY = 'openai-test-key';
@@ -171,7 +205,8 @@ test('OpenAI backup: Gemini out of quota → OpenAI answers with a strict JSON s
     const body = await res.json();
     assert.equal(res.status, 200);
     assert.equal(body.model, 'openai/gpt-6-luna');
-    assert.ok(urls.some((u) => u.includes('api.openai.com')));
+    assert.equal(urls.length, 1, 'Only OpenAI is called when it succeeds');
+    assert.ok(urls[0].includes('api.openai.com'));
     assert.ok(!urls.some((u) => u.includes('groq')), 'Groq not needed when OpenAI answers');
     assert.equal(sent.response_format.json_schema.strict, true);
     assert.equal(sent.reasoning_effort, 'low'); // fast: little reasoning

@@ -1,5 +1,5 @@
 // POST /api/scan — reads an iftar plate photo with a vision AI and returns which foods are on it.
-// AI: Google Gemini by default (GEMINI_API_KEY, free tier), then OpenAI, Groq (free) and Claude as backups.
+// AI: OpenAI by default, then Google Gemini, Groq (free) and Claude as backups.
 // The AI ONLY names foods and counts. All sugar maths happens in the app (lib/meal.ts, lib/forecast.ts).
 // API keys live only in Vercel env vars (or api/.env.local for local tests). Never put a key in the app.
 //
@@ -130,6 +130,16 @@ async function askWithFallback(image: string) {
   // True when another AI service might still answer (this one is out of quota, busy, or has no/a wrong key).
   const tryNext = (error: unknown) => error instanceof ScanError && (error.status === 429 || error.status === 503 || /key/i.test(error.message));
   let lastError: unknown;
+  if (hasOpenAI()) {
+    try {
+      return await askOpenAI(image, SYSTEM_PROMPT, ANSWER_SCHEMA, QUESTION);
+    } catch (error) {
+      console.error('OpenAI primary failed:', error instanceof Error ? error.message : error);
+      // A wrong model name or key on OUR side (500) should not stop the free backups below.
+      if (!tryNext(error) && !(error instanceof ScanError && (error.status === 500 || error.status === 502))) throw error;
+      lastError = error;
+    }
+  }
   if (Date.now() < geminiOutUntil) {
     lastError = new ScanError(429, 'Daily free AI limit used up'); // Gemini said so recently: don't wait for it again
   } else {
@@ -138,16 +148,6 @@ async function askWithFallback(image: string) {
     } catch (error) {
       if (error instanceof ScanError && /daily/i.test(error.message)) geminiOutUntil = Date.now() + SKIP_GEMINI_MS;
       if (!tryNext(error)) throw error;
-      lastError = error;
-    }
-  }
-  if (hasOpenAI()) {
-    try {
-      return await askOpenAI(image, SYSTEM_PROMPT, ANSWER_SCHEMA, QUESTION);
-    } catch (error) {
-      console.error('OpenAI backup failed:', error instanceof Error ? error.message : error);
-      // A wrong model name or key on OUR side (500) should not stop the free backups below.
-      if (!tryNext(error) && !(error instanceof ScanError && error.status === 500)) throw error;
       lastError = error;
     }
   }
@@ -174,8 +174,8 @@ export async function POST(request: Request): Promise<Response> {
   }
   if (typeof image !== 'string' || image.length < 100) return json({ error: 'Missing photo' }, 400);
   if (image.length > MAX_IMAGE_CHARS) return json({ error: 'Photo too large' }, 413);
-  // Which AI to ask: SCAN_PROVIDER=claude / groq / openai → only that one. Otherwise Gemini (all keys in turn);
-  // if Gemini is out of quota or busy: OpenAI (OPENAI_API_KEY), then Groq (free, GROQ_API_KEY), then Claude (ANTHROPIC_API_KEY).
+  // Which AI to ask: SCAN_PROVIDER=claude / groq / openai → only that one. Otherwise OpenAI first,
+  // then Gemini (all keys in turn), Groq and Claude when an earlier service is unavailable.
   try {
     const answer = await askWithFallback(image);
     const cleaned = cleanAnswer(answer.raw as { items?: ScanItem[]; unknown?: string[] });

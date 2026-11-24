@@ -32,9 +32,9 @@ Photo ─▶ scan server (Vercel) ─▶ vision AI: food ids + counts (JSON, ids
       ─▶ 2-hour curve + what-ifs (lib/forecast.ts) ─▶ Bangla advice
 Risk quiz ─▶ IDF-DAR 2021 points (lib/dar.ts) ─▶ Low / Moderate / High
 ```
-The AI only **reads the plate**. Everything else — the food table, glycemic load, the sugar curve, the IDF-DAR score and the safety rules — is our own code with sources (`docs/LOGIC.md`), covered by 41 unit tests (`npm test`).
+The AI only **reads the plate**. Everything else — the food table, glycemic load, the sugar curve, the IDF-DAR score and the safety rules — is our own code with sources (`docs/LOGIC.md`), covered by 49 unit tests (`npm test`).
 
-**If the AI is busy or out of free quota:** the server tries the next Gemini key, then **OpenAI**, then **Groq** (free), then Claude (if a key is set). If all are out, the app says so in Bangla and the user adds foods by hand — the forecast still works.
+**If the AI is busy or out of free quota:** the server tries **OpenAI first**, then **Gemini** (with backup keys), then **Groq** (free), then Claude (if a key is set). If all are out, the app says so in Bangla and the user adds foods by hand — the forecast still works.
 
 **Privacy:** no login, no account. Everything is stored only on the phone. The meal photo is sent to the scan server for reading and is not stored. AI keys live only in Vercel, never in the app or this repo.
 
@@ -42,7 +42,7 @@ The AI only **reads the plate**. Everything else — the food table, glycemic lo
 | Tool / model / API | Used for |
 |---|---|
 | Google Gemini API — `gemini-4-hydrogen` (free tier) | Reads the meal photo: which foods and how many (`api/api/scan.ts`, `api/providers/gemini.ts`) |
-| OpenAI API — `gpt-6-luna` | Backup photo reader (paid key) when Gemini's free quota is used up (`api/providers/openai.ts`) |
+| OpenAI API — `gpt-6-luna` | Primary photo reader (paid key) (`api/providers/openai.ts`) |
 | Groq API — `qwen/qwen3.8-27b` (free plan) | Backup photo reader when Gemini's free quota is used up (`api/providers/groq.ts`) |
 | Anthropic Claude API — `claude-opus-5-5` | Last backup photo reader, only if every Gemini key and Groq are out (`api/providers/claude.ts`) |
 | Claude Code (Claude Opus 5.5) | Coding assistant: wrote most of the app code with the team, tests, docs |
@@ -61,7 +61,7 @@ Tested on **10 real Bangladeshi iftar photos: 8/10 plates fully correct** (every
 ```bash
 npm install
 npx expo start              # app in Expo Go
-npm test                    # 41 unit tests (no internet needed)
+npm test                    # 49 unit tests (no internet needed)
 cd api && npm run dev       # scan server on port 3001 (needs api/.env.local, see api/.env.example)
 npx eas build -p android --profile preview   # APK
 ```

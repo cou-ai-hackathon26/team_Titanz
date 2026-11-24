@@ -75,3 +75,5 @@ Format: `- YYYY-MM-DD HH:MM · who · what changed · next step`
 - 2026-11-24 · Claude · Handoff written to docs/HANDOFF.md (token limit). Uncommitted but tested: add-it-yourself (name + grams), food size per item (½ / regular / 1½ or exact g/ml), reminders safe in Expo Go. 46 tests pass. Next: Nadim tests on phone → commit → final APK + release v1.1
 
 - 2026-11-24 · Codex · Verified and committed pending OpenAI scan fallback, Gemini timeout/quota cooldown, tests and documentation updates; 47 tests pass and TypeScript check passes. Next: verify the deployed scan flow.
+
+- 2026-11-24 · Codex · Made OpenAI the first scan provider, retaining Gemini/Groq/Claude backups; added primary-order and quota/network fallback tests.

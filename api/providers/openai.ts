@@ -1,4 +1,4 @@
-// OpenAI (ChatGPT API, paid key): a reliable photo reader used when every Gemini key is out of quota or busy.
+// OpenAI (ChatGPT API, paid key): the primary photo reader; Gemini and Groq remain backups.
 // Chat Completions API with the photo as a base64 data URL and Structured Outputs (strict JSON schema),
 // so the answer can only use our food ids. Docs: developers.openai.com/api/docs/guides/structured-outputs
 import { ScanError, type AiAnswer } from './scanError.ts';

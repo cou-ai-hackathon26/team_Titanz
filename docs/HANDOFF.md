@@ -39,3 +39,6 @@ Read `CLAUDE.md` / `AGENTS.md`, then `docs/RULES.md`, then this file. `docs/PROG
 - `expo-image-picker` `cameraPermission: false` removed the CAMERA permission → keep it out of `app.json`.
 - Hackathon challenges (both done, committed): (1) household plate comparison `app/compare.tsx`; (2) unrecognised food → forecast marked "অসম্পূর্ণ", "≥" numbers, never "safe" (`lib/plateCheck.ts`).
 - Safety rules: no dose advice anywhere; predictions are estimates/ranges; keys only in Vercel.
+
+## OpenAI-first scan routing (24 Nov)
+The default scan order is now OpenAI → Gemini (all configured keys) → Groq → Claude. OpenAI quota, network/timeout and configuration failures allow fallback. Explicit SCAN_PROVIDER overrides still select only one provider.
