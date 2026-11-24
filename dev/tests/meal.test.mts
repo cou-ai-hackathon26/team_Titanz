@@ -49,3 +49,18 @@ test('Food dots: jilapi and muri high, khejur and egg low', () => {
   assert.equal(foodImpact('muri'), 'high');
   assert.ok(FOOD_BY_ID.khejur);
 });
+
+test('user size: count × size scales carbs, GL and fibre+protein; choices are half / standard / 1.5×', async () => {
+  const { mealTotals, sizeScale, itemCarbs, sizeChoices } = await import('../../lib/meal.ts');
+  const { FOOD_BY_ID } = await import('../../lib/foods.ts');
+  const muri = FOOD_BY_ID.muri; // 30 g bowl
+  const standard = mealTotals([{ foodId: 'muri', count: 1 }]);
+  const bigger = mealTotals([{ foodId: 'muri', count: 1, size: 60 }]); // 60 g instead of 30 g
+  assert.equal(sizeScale({ foodId: 'muri', count: 1, size: 60 }), 2);
+  assert.ok(Math.abs(bigger.carbs - standard.carbs * 2) < 1e-9);
+  assert.ok(Math.abs(bigger.gl - standard.gl * 2) < 1e-9);
+  assert.ok(Math.abs(bigger.fiberProtein - standard.fiberProtein * 2) < 1e-9);
+  assert.ok(Math.abs(itemCarbs({ foodId: 'muri', count: 2, size: 15 }) - muri.carbsPerUnit) < 1e-9); // 2 × half = 1 bowl
+  assert.deepEqual(sizeChoices(FOOD_BY_ID.milk).map((c) => c.size), [125, 250, 375]);
+  assert.equal(sizeScale({ foodId: 'muri', count: 1 }), 1); // no size = our standard portion
+});

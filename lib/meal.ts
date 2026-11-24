@@ -1,11 +1,41 @@
 // Meal maths from docs/LOGIC.md section 2. Pure functions, no AI here: this is OUR code.
-import { FOOD_BY_ID } from './foods.ts';
+import { FOOD_BY_ID, type Food } from './foods.ts';
 
 export type MealItem = {
   foodId: string;
   count: number; // pieces / cups / bowls / glasses
   unsure?: boolean; // the AI was not sure (confidence < 0.6): the app asks the user to check
+  size?: number; // g or ml of ONE piece/cup/bowl/glass, if the user changed it (missing = our standard portion)
 };
+
+// How much bigger or smaller than our standard portion one piece is (1 = standard). Used for every number.
+export function sizeScale(item: MealItem): number {
+  const food = FOOD_BY_ID[item.foodId];
+  if (!food || !item.size || food.unit === 'serving' || food.portion <= 0) return 1;
+  return item.size / food.portion;
+}
+
+// The size of one piece of this item in g/ml (the user's size, or our standard portion).
+export function itemSize(item: MealItem): number {
+  const food = FOOD_BY_ID[item.foodId];
+  return item.size ?? food?.portion ?? 0;
+}
+
+// Grams of carbohydrate this item adds to the plate (count × size).
+export function itemCarbs(item: MealItem): number {
+  const food = FOOD_BY_ID[item.foodId];
+  return food ? food.carbsPerUnit * item.count * sizeScale(item) : 0;
+}
+
+// Ready-made sizes to pick from: small (half), our standard portion, large (one and a half), rounded to 5 g/ml.
+export function sizeChoices(food: Food): { label: string; size: number }[] {
+  const round5 = (n: number) => Math.max(5, Math.round(n / 5) * 5);
+  return [
+    { label: 'ছোট', size: round5(food.portion * 0.5) },
+    { label: 'নিয়মিত', size: food.portion },
+    { label: 'বড়', size: round5(food.portion * 1.5) },
+  ];
+}
 
 export type CarbBand = 'low' | 'moderate' | 'high';
 
@@ -27,9 +57,10 @@ export function mealTotals(items: MealItem[]): MealTotals {
   for (const item of items) {
     const food = FOOD_BY_ID[item.foodId];
     if (!food || item.count <= 0) continue;
-    carbs += food.carbsPerUnit * item.count;
-    gl += (food.carbsPerUnit * item.count * food.gi) / 100;
-    fiberProtein += (food.fiberPerUnit + food.proteinPerUnit) * item.count;
+    const amount = item.count * sizeScale(item); // e.g. 2 glasses of 300 ml = 2 × 1.2 standard glasses
+    carbs += food.carbsPerUnit * amount;
+    gl += (food.carbsPerUnit * amount * food.gi) / 100;
+    fiberProtein += (food.fiberPerUnit + food.proteinPerUnit) * amount;
   }
   return { carbs, gl, fiberProtein, band: carbBand(carbs) };
 }

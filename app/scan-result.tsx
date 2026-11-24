@@ -13,12 +13,17 @@ import CarbScale from '../components/CarbScale';
 import { getScan, setScanItems, setScanMeal, setScanUnknown } from '../lib/scanStore';
 import { setFamilyPlate } from '../lib/compareStore';
 import ChoiceChip from '../components/ChoiceChip';
+import Sheet from '../components/Sheet';
+import Input from '../components/Input';
+import { makeCustomFood, validCustomCarbs } from '../lib/customFood';
+import { saveCustomFood } from '../lib/storage';
+import { onlyDigits } from '../lib/bangla';
 import { loadProfile } from '../lib/storage';
 import { findDistrict, fastTimes } from '../lib/places';
 import { mealForTime, minutesOfDay } from '../lib/time';
 import { scanPlate, LOW_CONFIDENCE } from '../lib/scanApi';
 import { FOODS, FOOD_BY_ID, unitBn } from '../lib/foods';
-import { mealTotals, foodImpact, CarbBand, MealItem } from '../lib/meal';
+import { mealTotals, foodImpact, CarbBand, MealItem, sizeScale, itemSize, sizeChoices } from '../lib/meal';
 import { toBanglaDigits } from '../lib/bangla';
 import { colors, fonts, radius } from '../theme/tokens';
 
@@ -47,6 +52,20 @@ export default function ScanResultScreen() {
   const [unknown, setUnknown] = useState<string[]>(scan.unknown); // foods the AI saw that are not in our table
   // A plate without a photo opens the food list straight away.
   const [meal, setMeal] = useState<'iftar' | 'sehri'>(scan.meal ?? 'iftar');
+  // "Add it yourself": a food the AI couldn't recognise (or that isn't in our list), with grams typed by the user.
+  const [custom, setCustom] = useState<{ from: string | null; name: string; grams: string } | null>(null);
+  const customGrams = custom && custom.grams !== '' ? Number(onlyDigits(custom.grams)) : null;
+  const customOk = !!custom && custom.name.trim() !== '' && validCustomCarbs(customGrams);
+
+  // Saves the user's own food on the phone, puts it on the plate, and stops warning about the unrecognised one.
+  async function addCustomFood() {
+    if (!custom || !customOk) return;
+    const food = makeCustomFood(custom.name, customGrams as number);
+    await saveCustomFood(food);
+    setItems((now) => [...now, { foodId: food.id, count: 1 }]);
+    if (custom.from) setUnknown((now) => now.filter((u) => u !== custom.from));
+    setCustom(null);
+  }
 
   // Sehri or iftar: picked automatically from the time of day and the district's sehri time (user can change it).
   useEffect(() => {
@@ -106,9 +125,30 @@ export default function ScanResultScreen() {
     setItems(items.map((it, i) => (i === index ? { ...it, count } : it)));
   }
 
+  // Size of one piece/cup/glass: the user can pick small / regular / large or type the exact g/ml.
+  const [sizeEdit, setSizeEdit] = useState<{ index: number; typed: string } | null>(null);
+  const sizeItem = sizeEdit ? items[sizeEdit.index] : undefined;
+  const sizeFood = sizeItem ? FOOD_BY_ID[sizeItem.foodId] : undefined;
+  const typedSize = sizeEdit && sizeEdit.typed !== '' ? Number(onlyDigits(sizeEdit.typed)) : null;
+  const typedSizeOk = typedSize !== null && typedSize >= 1 && typedSize <= 2000;
+
+  // Saves a new size for one food (size = our standard portion clears the change).
+  function setSize(size: number) {
+    if (!sizeEdit || !sizeFood) return;
+    const index = sizeEdit.index;
+    setItems((now) => now.map((it, n) => (n === index ? { ...it, size: size === sizeFood.portion ? undefined : size } : it)));
+    setSizeEdit(null);
+  }
+
   // Adds a food by hand, or swaps an unsure food for the right one.
   function pickFood(foodId: string) {
     if (!picker) return;
+    if (foodId === '__custom') {
+      // Not in our list: type it in yourself.
+      setPicker(null);
+      setCustom({ from: picker.mode === 'match' ? picker.name : null, name: picker.mode === 'match' ? picker.name : '', grams: '' });
+      return;
+    }
     if (picker.mode === 'match') {
       // The user says which of our foods the unrecognised one is most like: count it, and stop warning about it.
       const existing = items.findIndex((i) => i.foodId === foodId);
@@ -141,7 +181,11 @@ export default function ScanResultScreen() {
     router.navigate('/forecast'); // switch to the Forecast tab (closes camera + result screens)
   }
 
-  const pickerOptions = FOODS.map((f) => ({ id: f.id, label: `${f.nameBn} · ${f.nameEn}` }));
+  // The list always starts with "not in the list? type it yourself".
+  const pickerOptions = [
+    { id: '__custom', label: '+ তালিকায় নেই? নিজে লিখুন (নাম ও শর্করা)' },
+    ...FOODS.map((f) => ({ id: f.id, label: `${f.nameBn} · ${f.nameEn}` })),
+  ];
 
   return (
     <View style={styles.screen}>
@@ -224,8 +268,8 @@ export default function ScanResultScreen() {
                   return (
                     <View key={item.foodId} style={styles.row}>
                       <View style={[styles.rowDot, { backgroundColor: bandColor[item.unsure ? 'moderate' : foodImpact(item.foodId)].strong }]} />
+                      <View style={styles.rowText}>
                       <Pressable
-                        style={styles.rowText}
                         onPress={() => setPicker({ mode: 'replace', index })}
                         accessibilityRole="button"
                         accessibilityLabel={`${food.nameBn}${item.unsure ? ', AI নিশ্চিত নয়' : ''}`}
@@ -238,9 +282,24 @@ export default function ScanResultScreen() {
                         <Text style={styles.rowSub}>
                           {item.unsure
                             ? 'AI নিশ্চিত নয় — ঠিক না হলে বদলান'
-                            : `${food.nameEn.split(' (')[0]} · ${toBanglaDigits(Math.round(food.carbsPerUnit))}g প্রতি ${unitBn[food.unit]}`}
+                            : `${food.nameEn.split(' (')[0]} · ${toBanglaDigits(Math.round(food.carbsPerUnit * sizeScale(item)))}g শর্করা প্রতি ${unitBn[food.unit]}`}
                         </Text>
                       </Pressable>
+                        {food.unit !== 'serving' ? (
+                          <Pressable
+                            onPress={() => setSizeEdit({ index, typed: '' })}
+                            accessibilityRole="button"
+                            accessibilityLabel={`${food.nameBn}: এক ${unitBn[food.unit]} ${itemSize(item)} ${food.portionUnit}, পরিমাণ বদলান`}
+                            style={[styles.sizePill, item.size ? styles.sizePillChanged : null]}
+                            hitSlop={6}
+                          >
+                            <Icon name="edit" size={14} />
+                            <Text style={styles.sizePillText}>
+                              ১ {unitBn[food.unit]} = {toBanglaDigits(Math.round(itemSize(item)))} {food.portionUnit}
+                            </Text>
+                          </Pressable>
+                        ) : null}
+                      </View>
                       <Stepper value={item.count} onChange={(n) => setCount(index, n)} label={food.nameBn} />
                     </View>
                   );
@@ -254,13 +313,13 @@ export default function ScanResultScreen() {
                     <Text style={styles.unknownTitle}>AI এগুলো চিনতে পারেনি</Text>
                   </View>
                   <Text style={styles.unknownText}>
-                    মিলিয়ে না নিলে এগুলোর শর্করা হিসাবে থাকবে না, তাই পূর্বাভাস অসম্পূর্ণ দেখাবে।
+                    "নিজে যোগ করুন" চেপে খাবারটি কত গ্রাম শর্করা লিখুন (প্যাকেট/লেবেল দেখে), অথবা তালিকা থেকে বেছে নিন। না করলে এর শর্করা হিসাবে থাকবে না, তাই পূর্বাভাস অসম্পূর্ণ দেখাবে।
                   </Text>
                   {unknown.map((name) => (
                     <View key={name} style={styles.unknownRow}>
                       <Text style={styles.unknownName} numberOfLines={1}>{name}</Text>
-                      <Pressable onPress={() => setPicker({ mode: 'match', name })} accessibilityRole="button" style={styles.unknownBtn}>
-                        <Text style={styles.unknownBtnText}>মিলিয়ে নিন</Text>
+                      <Pressable onPress={() => setCustom({ from: name, name, grams: '' })} accessibilityRole="button" style={styles.unknownBtn}>
+                        <Text style={styles.unknownBtnText}>নিজে যোগ করুন</Text>
                       </Pressable>
                       <Pressable onPress={() => setUnknown(unknown.filter((u) => u !== name))} accessibilityRole="button" accessibilityLabel={`${name} বাদ দিন`} style={styles.unknownSkip}>
                         <Text style={styles.unknownSkipText}>বাদ দিন</Text>
@@ -307,12 +366,101 @@ export default function ScanResultScreen() {
 
       <PickerSheet
         visible={picker !== null}
-        title={picker?.mode === 'replace' ? 'সঠিক খাবারটি বেছে নিন' : picker?.mode === 'match' ? `"${picker.name}" কোনটার মতো?` : 'খাবার যোগ করুন'}
+        title={picker?.mode === 'replace' ? 'সঠিক খাবারটি বেছে নিন' : picker?.mode === 'match' ? `"${picker.name}" — তালিকা থেকে বেছে নিন` : 'খাবার যোগ করুন'}
         options={pickerOptions}
         selectedId={picker?.mode === 'replace' ? items[picker.index]?.foodId ?? null : null}
         onPick={pickFood}
         onClose={() => setPicker(null)}
       />
+
+      {/* Size of one piece / cup / glass */}
+      <Sheet visible={sizeEdit !== null} onClose={() => setSizeEdit(null)} title={sizeFood ? `${sizeFood.nameBn} — পরিমাণ` : 'পরিমাণ'}>
+        {sizeFood && sizeItem ? (
+          <View style={styles.customBody}>
+            <Text style={styles.customHelp}>
+              এক {unitBn[sizeFood.unit]} কত বড়? জানা থাকলে মাপ লিখুন — হিসাব আরও ঠিক হবে। (মোট = সংখ্যা × এই মাপ)
+            </Text>
+            <View style={styles.sizeRow}>
+              {sizeChoices(sizeFood).map((c) => {
+                const selected = Math.round(itemSize(sizeItem)) === c.size;
+                return (
+                  <Pressable
+                    key={c.label}
+                    onPress={() => setSize(c.size)}
+                    accessibilityRole="button"
+                    accessibilityState={{ selected }}
+                    style={[styles.sizeChoice, selected ? styles.sizeChoiceSelected : null]}
+                  >
+                    <Text style={styles.sizeChoiceLabel}>{c.label}</Text>
+                    <Text style={styles.sizeChoiceValue}>
+                      {toBanglaDigits(c.size)} {sizeFood.portionUnit}
+                    </Text>
+                    <Text style={styles.sizeChoiceCarbs}>
+                      শর্করা {toBanglaDigits(Math.round((sizeFood.carbsPerUnit * c.size) / sizeFood.portion))}g
+                    </Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+            <Input
+              label={`নিজে মাপ লিখুন (${sizeFood.portionUnit === 'ml' ? 'মিলি' : 'গ্রাম'})`}
+              value={sizeEdit?.typed ?? ''}
+              onChangeText={(t) => setSizeEdit((e) => (e ? { ...e, typed: onlyDigits(t).slice(0, 4) } : e))}
+              placeholder={`যেমন ${toBanglaDigits(sizeFood.portion)}`}
+              keyboardType="number-pad"
+              maxLength={4}
+              digitsOnly
+            />
+            {typedSizeOk ? (
+              <Text style={styles.customHelp}>
+                এক {unitBn[sizeFood.unit]}-তে শর্করা প্রায় {toBanglaDigits(Math.round((sizeFood.carbsPerUnit * (typedSize as number)) / sizeFood.portion))} g
+              </Text>
+            ) : null}
+            <Button label="এই মাপ রাখুন" sub="Use this size" icon="check" onPress={() => typedSizeOk && setSize(typedSize as number)} disabled={!typedSizeOk} />
+          </View>
+        ) : null}
+      </Sheet>
+
+      {/* Add it yourself: name + grams of carbohydrate in one serving (no guessing by the app) */}
+      <Sheet visible={custom !== null} onClose={() => setCustom(null)} title="নিজে খাবার যোগ করুন">
+        <View style={styles.customBody}>
+          <Input
+            label="খাবারের নাম"
+            value={custom?.name ?? ''}
+            onChangeText={(t) => setCustom((c) => (c ? { ...c, name: t } : c))}
+            placeholder="যেমন: স্প্যাগেটি"
+          />
+          <Input
+            label="এক পরিবেশনে শর্করা (গ্রাম)"
+            value={custom?.grams ?? ''}
+            onChangeText={(t) => setCustom((c) => (c ? { ...c, grams: onlyDigits(t).slice(0, 3) } : c))}
+            placeholder="যেমন ৪৫"
+            keyboardType="number-pad"
+            maxLength={3}
+            digitsOnly
+          />
+          {custom && custom.grams !== '' && !validCustomCarbs(customGrams) ? (
+            <Text style={styles.customError}>০ থেকে ৩০০ গ্রামের মধ্যে লিখুন।</Text>
+          ) : null}
+          <Text style={styles.customHelp}>
+            প্যাকেট বা লেবেলে "Carbohydrate" দেখে লিখুন। কত দ্রুত সুগার বাড়ায় জানা নেই, তাই দ্রুত বাড়ে ধরে হিসাব হবে (নিরাপদ দিক)। জানা না থাকলে খাবারটি বাদ দিন — পূর্বাভাস তখন অসম্পূর্ণ দেখাবে।
+          </Text>
+          <Button label="প্লেটে যোগ করুন" sub="Add to plate" icon="add" onPress={addCustomFood} disabled={!customOk} />
+          {custom?.from ? (
+            <Pressable
+              onPress={() => {
+                const name = custom.from as string;
+                setCustom(null);
+                setPicker({ mode: 'match', name });
+              }}
+              accessibilityRole="button"
+              style={styles.customLink}
+            >
+              <Text style={styles.customLinkText}>আমাদের তালিকায় আছে? তালিকা থেকে বেছে নিন</Text>
+            </Pressable>
+          ) : null}
+        </View>
+      </Sheet>
     </View>
   );
 }
@@ -360,6 +508,20 @@ const styles = StyleSheet.create({
   rowText: { flex: 1 },
   rowName: { fontFamily: fonts.banglaSemiBold, fontSize: 17, lineHeight: 23, color: colors.textPrimary },
   rowSub: { fontFamily: fonts.bangla, fontSize: 12, lineHeight: 16, color: colors.textSecondary },
+  sizePill: { flexDirection: 'row', alignItems: 'center', gap: 4, alignSelf: 'flex-start', marginTop: 4, backgroundColor: colors.bgSurface, borderRadius: radius.pill, paddingHorizontal: 10, paddingVertical: 4 },
+  sizePillChanged: { backgroundColor: colors.bgPage },
+  sizePillText: { fontFamily: fonts.banglaMedium, fontSize: 12, lineHeight: 16, color: colors.textPrimary },
+  sizeRow: { flexDirection: 'row', gap: 8 },
+  sizeChoice: { flex: 1, alignItems: 'center', gap: 2, paddingVertical: 12, borderRadius: radius.tile, borderWidth: 1, borderColor: colors.borderDefault, backgroundColor: colors.bgSurface },
+  sizeChoiceSelected: { backgroundColor: colors.bgPage, borderColor: colors.borderBrand, borderWidth: 1.5 },
+  sizeChoiceLabel: { fontFamily: fonts.banglaBold, fontSize: 15, lineHeight: 21, color: colors.textPrimary },
+  sizeChoiceValue: { fontFamily: fonts.banglaMedium, fontSize: 13, lineHeight: 18, color: colors.textPrimary },
+  sizeChoiceCarbs: { fontFamily: fonts.bangla, fontSize: 12, lineHeight: 16, color: colors.textSecondary },
+  customBody: { paddingHorizontal: 20, gap: 12 },
+  customHelp: { fontFamily: fonts.bangla, fontSize: 13, lineHeight: 19, color: colors.textSecondary },
+  customError: { fontFamily: fonts.banglaMedium, fontSize: 13, lineHeight: 18, color: colors.riskHigh },
+  customLink: { alignSelf: 'center', paddingVertical: 8 },
+  customLinkText: { fontFamily: fonts.banglaSemiBold, fontSize: 14, lineHeight: 20, color: colors.textBrand },
   unknownBox: { backgroundColor: colors.riskModerateSoft, borderRadius: radius.tile, padding: 14, gap: 8 },
   unknownHead: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   unknownTitle: { fontFamily: fonts.banglaBold, fontSize: 15, lineHeight: 21, color: colors.textPrimary },

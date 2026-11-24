@@ -1,4 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import type { Food } from './foods';
+import { registerFoods } from './customFood';
 
 // Everything we save about the user. It stays ONLY on this phone (no login, no server).
 export type Profile = {
@@ -77,7 +79,7 @@ export async function loadRisk(): Promise<RiskRecord | null> {
 // One saved iftar plan (from the forecast screen). Used later by the History screen.
 export type MealPlan = {
   date: string; // ISO date-time
-  items: { foodId: string; count: number }[]; // the plate after the user's changes
+  items: { foodId: string; count: number; size?: number }[]; // the plate after the user's changes (size = g/ml of one piece, if changed)
   walk15: boolean;
   peakNow: number; // estimated peak of the plate as scanned (mmol/L)
   peakAfter: number; // estimated peak with the changes (mmol/L)
@@ -154,5 +156,32 @@ export async function saveSettings(changes: Partial<AppSettings>): Promise<AppSe
 
 // Deletes everything the app saved on this phone (profile, risk, plans, readings, settings).
 export async function deleteAllData(): Promise<void> {
-  await AsyncStorage.multiRemove([PROFILE_KEY, RISK_KEY, MEALS_KEY, READINGS_KEY, SETTINGS_KEY]);
+  await AsyncStorage.multiRemove([PROFILE_KEY, RISK_KEY, MEALS_KEY, READINGS_KEY, SETTINGS_KEY, 'roza-safe/custom-foods']);
+}
+
+// ---------- Foods the user added themselves (when the AI could not recognise a food) ----------
+const CUSTOM_FOODS_KEY = 'roza-safe/custom-foods';
+
+// Reads the user's own foods and makes them findable in the app. Called once when the app opens.
+export async function loadCustomFoods(): Promise<void> {
+  try {
+    const raw = await AsyncStorage.getItem(CUSTOM_FOODS_KEY);
+    registerFoods(raw ? JSON.parse(raw) : []);
+  } catch {
+    // broken data: just start without custom foods
+  }
+}
+
+// Saves one of the user's own foods on the phone (so History still shows it later) and makes it findable now.
+export async function saveCustomFood(food: Food): Promise<void> {
+  registerFoods([food]);
+  let list: Food[] = [];
+  try {
+    const raw = await AsyncStorage.getItem(CUSTOM_FOODS_KEY);
+    list = raw ? JSON.parse(raw) : [];
+  } catch {
+    list = [];
+  }
+  list.push(food);
+  await AsyncStorage.setItem(CUSTOM_FOODS_KEY, JSON.stringify(list.slice(-200)));
 }

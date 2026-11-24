@@ -5,7 +5,7 @@
 // ATK08 = Atkinson FS, Foster-Powell K, Brand-Miller JC. Diabetes Care 2008;31:2281-3, Table 1.
 // TODO (team): weigh 5-10 pieces of each fried snack and replace the estimated portion weights.
 
-export type Unit = "piece" | "cup" | "bowl" | "glass";
+export type Unit = "piece" | "cup" | "bowl" | "glass" | "serving"; // serving = a food the user added themselves
 
 export type Food = {
   id: string;
@@ -169,4 +169,4 @@ export const FOODS: Food[] = [
 export const FOOD_BY_ID: Record<string, Food> = Object.fromEntries(FOODS.map((f) => [f.id, f]));
 
 // Bangla word for each unit, for labels like "১৮g প্রতি পিস".
-export const unitBn: Record<Unit, string> = { piece: "পিস", cup: "কাপ", bowl: "বাটি", glass: "গ্লাস" };
+export const unitBn: Record<Unit, string> = { piece: "পিস", cup: "কাপ", bowl: "বাটি", glass: "গ্লাস", serving: "পরিবেশন" };

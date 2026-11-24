@@ -12,7 +12,7 @@ import { goBack } from '../../lib/nav';
 import { loadMealPlans, loadReadings, MealPlan, Reading } from '../../lib/storage';
 import { FOOD_BY_ID } from '../../lib/foods';
 import { forecast, FORECAST } from '../../lib/forecast';
-import { mealTotals, MealItem } from '../../lib/meal';
+import { mealTotals, MealItem, itemCarbs, itemSize } from '../../lib/meal';
 import { adviceFor } from '../../lib/hypo';
 import { dayPart, minutesOfDay, sameDay, shortDate } from '../../lib/time';
 import { formatClock } from '../../lib/places';
@@ -59,7 +59,7 @@ export default function PlanDetailScreen() {
   }
 
   const when = new Date(plan.date);
-  const items: MealItem[] = plan.items.map((i) => ({ foodId: i.foodId, count: i.count }));
+  const items: MealItem[] = plan.items.map((i) => ({ foodId: i.foodId, count: i.count, size: i.size }));
   const totals = mealTotals(items);
   const before = forecast(items); // the saved plate, without the walk
   const after = forecast(items, { walk15: plan.walk15 }); // with the walk, if they planned one
@@ -119,9 +119,12 @@ export default function PlanDetailScreen() {
                   <Text style={styles.foodName}>
                     {food.nameBn} × {toBanglaDigits(i.count)}
                   </Text>
-                  <Text style={styles.small}>{food.nameEn}</Text>
+                  <Text style={styles.small}>
+                    {food.nameEn}
+                    {i.size ? ` · ${toBanglaDigits(Math.round(itemSize(i)))} ${food.portionUnit} প্রতিটি` : ''}
+                  </Text>
                 </View>
-                <Text style={styles.foodCarbs}>{bn0(food.carbsPerUnit * i.count)} g শর্করা</Text>
+                <Text style={styles.foodCarbs}>{bn0(itemCarbs(i))} g শর্করা</Text>
               </View>
             );
           })}

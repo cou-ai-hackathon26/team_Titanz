@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Platform } from 'react-native';
 import { Stack, router } from 'expo-router';
 import * as Notifications from 'expo-notifications';
@@ -16,6 +16,7 @@ import { Inter_600SemiBold } from '@expo-google-fonts/inter/600SemiBold';
 import { Inter_700Bold } from '@expo-google-fonts/inter/700Bold';
 import { colors } from '../theme/tokens';
 import { refreshReminders } from '../lib/reminders';
+import { loadCustomFoods } from '../lib/storage';
 
 // Keep the splash screen up until fonts are ready.
 SplashScreen.preventAutoHideAsync();
@@ -37,7 +38,12 @@ export default function RootLayout() {
     BanglaDigits_600SemiBold: require('../assets/fonts/BanglaDigits_600SemiBold.ttf'),
     BanglaDigits_700Bold: require('../assets/fonts/BanglaDigits_700Bold.ttf'),
   });
-  const ready = fontsLoaded || !!fontError; // if a font fails, still open the app with system fonts
+  // The user's own foods (added when the AI couldn't recognise something) must be known before any screen shows a plate.
+  const [foodsLoaded, setFoodsLoaded] = useState(false);
+  useEffect(() => {
+    loadCustomFoods().finally(() => setFoodsLoaded(true));
+  }, []);
+  const ready = (fontsLoaded || !!fontError) && foodsLoaded; // if a font fails, still open the app with system fonts
 
   // Hide the splash screen once fonts have loaded (or failed).
   useEffect(() => {

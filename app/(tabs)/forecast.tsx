@@ -89,7 +89,7 @@ function ForecastView() {
   async function savePlan() {
     await saveMealPlan({
       date: new Date().toISOString(),
-      items: changedPlate(items, whatIf).filter((i) => i.count > 0).map(({ foodId, count }) => ({ foodId, count })),
+      items: changedPlate(items, whatIf).filter((i) => i.count > 0).map(({ foodId, count, size }) => ({ foodId, count, size })),
       walk15: whatIf.walk15,
       peakNow: now.peak,
       peakAfter: after.peak,
