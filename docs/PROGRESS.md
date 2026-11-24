@@ -77,3 +77,6 @@ Format: `- YYYY-MM-DD HH:MM · who · what changed · next step`
 - 2026-11-24 · Codex · Verified and committed pending OpenAI scan fallback, Gemini timeout/quota cooldown, tests and documentation updates; 47 tests pass and TypeScript check passes. Next: verify the deployed scan flow.
 
 - 2026-11-24 · Codex · Made OpenAI the first scan provider, retaining Gemini/Groq/Claude backups; added primary-order and quota/network fallback tests.
+
+- 2026-11-24 · Codex · Added per-serving drink entry: packaged ml plus label/explicit cola proxy, homemade 0–6 tablespoons plus other ingredient carbs, editable saved recipes used by forecast/history/comparison.
+- 2026-11-24 · Codex · Drink verification: 53 tests pass, TypeScript clean; browser checked per-serving sugar, two-glass totals, Bangla decimal label input, recipe editing, forecast navigation and 390px mobile layout. Existing standard drink-size controls retained.

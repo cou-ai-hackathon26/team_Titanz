@@ -85,3 +85,10 @@ Risk elements (one quiz question each, roughly): diabetes type, duration, hypogl
 - **Pre-iftar reminder:** 1 hour before iftar for the user's district (`reminderTime`), tap opens the pre-iftar check.
 - **Sehri medicine reminder:** only for tablet/insulin users, 30 minutes before sehri ends. Text: take your sehri medicine the way your doctor said, don't change the dose yourself. **Never a dose or medicine name** (`docs/RULES.md`).
 - Sun times (sehri end = Fajr at 18°, iftar = sunset) are computed on the phone (`lib/places.ts`, NOAA formulas) for the districts in the list (9 cities: Cumilla and the 8 divisional cities).
+
+## Drink entry (24 Nov)
+- User chooses packaged beverage or homemade drink; all quantities are per glass/serving, not per jug.
+- Packaged: volume choices 100/200/250/330/500 ml or custom 1–2000 ml; carbs = ml × label carbohydrate per 100 ml / 100. Users explicitly choose the regular-cola proxy (10.6 g/100 ml) or enter their label, including 0 for verified zero-carb products. Proxy source: https://www.coca-cola.com/gb/en/brands/coca-cola-original-taste . Not a universal beverage value.
+- Homemade: 0–6 level tablespoons × estimated 12 g sugar/tablespoon, plus separately entered other ingredient carbs per serving. Water contributes zero; milk, fruit and syrup are not silently treated as water. The 12 g estimate uses USDA's 4 g/teaspoon × 3: https://www.ars.usda.gov/ARSUserFiles/80400530/pdf/portion.pdf . Household spoon amounts vary.
+- Drink GI is an explicit unvalidated proxy of 70, matching custom foods; no additional protein/fibre reduction is assumed. These feed the existing illustrative forecast, not a glucose measurement.
+- Recipes persist as custom foods with the original inputs. Editing makes a new recipe so old history stays unchanged.

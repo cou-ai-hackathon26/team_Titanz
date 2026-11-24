@@ -15,6 +15,8 @@ import { setFamilyPlate } from '../lib/compareStore';
 import ChoiceChip from '../components/ChoiceChip';
 import Sheet from '../components/Sheet';
 import Input from '../components/Input';
+import DrinkSheet from '../components/DrinkSheet';
+import { makeDrinkFood, looksLikeDrink, type DrinkDetails } from '../lib/drinks';
 import { makeCustomFood, validCustomCarbs } from '../lib/customFood';
 import { saveCustomFood } from '../lib/storage';
 import { onlyDigits } from '../lib/bangla';
@@ -56,6 +58,26 @@ export default function ScanResultScreen() {
   const [custom, setCustom] = useState<{ from: string | null; name: string; grams: string } | null>(null);
   const customGrams = custom && custom.grams !== '' ? Number(onlyDigits(custom.grams)) : null;
   const customOk = !!custom && custom.name.trim() !== '' && validCustomCarbs(customGrams);
+
+  const [drinkEdit, setDrinkEdit] = useState<{ from: string | null; name: string; index?: number; initial?: DrinkDetails } | null>(null);
+
+  // Saves a new recipe without changing any recipe used by an older saved plan.
+  async function saveDrink(name: string, details: DrinkDetails) {
+    if (!drinkEdit) return;
+    const food = makeDrinkFood(name, details);
+    await saveCustomFood(food);
+    const index = drinkEdit.index;
+    setItems((now) => index === undefined ? [...now, { foodId: food.id, count: 1 }] :
+      now.map((item, n) => n === index ? { foodId: food.id, count: item.count, unsure: false } : item));
+    if (drinkEdit.from) setUnknown((now) => now.filter((value) => value !== drinkEdit.from));
+    setDrinkEdit(null);
+  }
+
+  // Unknown drinks go directly to drink choices; any other unknown can also use the drink form.
+  function openUnknown(name: string) {
+    if (looksLikeDrink(name)) setDrinkEdit({ from: name, name });
+    else setCustom({ from: name, name, grams: '' });
+  }
 
   // Saves the user's own food on the phone, puts it on the plate, and stops warning about the unrecognised one.
   async function addCustomFood() {
@@ -143,6 +165,11 @@ export default function ScanResultScreen() {
   // Adds a food by hand, or swaps an unsure food for the right one.
   function pickFood(foodId: string) {
     if (!picker) return;
+    if (foodId === '__drink') {
+      setDrinkEdit({ from: picker.mode === 'match' ? picker.name : null, name: picker.mode === 'match' ? picker.name : '', index: picker.mode === 'replace' ? picker.index : undefined });
+      setPicker(null);
+      return;
+    }
     if (foodId === '__custom') {
       // Not in our list: type it in yourself.
       setPicker(null);
@@ -181,8 +208,9 @@ export default function ScanResultScreen() {
     router.navigate('/forecast'); // switch to the Forecast tab (closes camera + result screens)
   }
 
-  // The list always starts with "not in the list? type it yourself".
+  // Drink portions and custom foods come first, followed by the standard food table.
   const pickerOptions = [
+    { id: '__drink', label: '+ পানীয়: প্যাকেটের / ঘরে তৈরি' },
     { id: '__custom', label: '+ তালিকায় নেই? নিজে লিখুন (নাম ও শর্করা)' },
     ...FOODS.map((f) => ({ id: f.id, label: `${f.nameBn} · ${f.nameEn}` })),
   ];
@@ -285,7 +313,13 @@ export default function ScanResultScreen() {
                             : `${food.nameEn.split(' (')[0]} · ${toBanglaDigits(Math.round(food.carbsPerUnit * sizeScale(item)))}g শর্করা প্রতি ${unitBn[food.unit]}`}
                         </Text>
                       </Pressable>
-                        {food.unit !== 'serving' ? (
+                        {food.portionUnit === 'ml' || food.drink ? (
+                          <Pressable accessibilityRole="button" onPress={() => setDrinkEdit({ from: null, name: food.nameBn, index, initial: food.drink })} style={styles.sizePill}>
+                            <Icon name="edit" size={14} />
+                            <Text style={styles.sizePillText}>{food.drink ? (food.drink.kind === 'homemade' ? `চিনি ${toBanglaDigits(food.drink.tablespoons)} টেবিল চামচ / পরিবেশন` : `${toBanglaDigits(food.drink.ml)} ml / গ্লাস`) : 'পানীয়ের ধরন ও চিনি ঠিক করুন'}</Text>
+                          </Pressable>
+                        ) : null}
+                        {!food.drink && food.unit !== 'serving' ? (
                           <Pressable
                             onPress={() => setSizeEdit({ index, typed: '' })}
                             accessibilityRole="button"
@@ -318,7 +352,7 @@ export default function ScanResultScreen() {
                   {unknown.map((name) => (
                     <View key={name} style={styles.unknownRow}>
                       <Text style={styles.unknownName} numberOfLines={1}>{name}</Text>
-                      <Pressable onPress={() => setCustom({ from: name, name, grams: '' })} accessibilityRole="button" style={styles.unknownBtn}>
+                      <Pressable onPress={() => openUnknown(name)} accessibilityRole="button" style={styles.unknownBtn}>
                         <Text style={styles.unknownBtnText}>নিজে যোগ করুন</Text>
                       </Pressable>
                       <Pressable onPress={() => setUnknown(unknown.filter((u) => u !== name))} accessibilityRole="button" accessibilityLabel={`${name} বাদ দিন`} style={styles.unknownSkip}>
@@ -421,9 +455,16 @@ export default function ScanResultScreen() {
         ) : null}
       </Sheet>
 
+      {drinkEdit ? <DrinkSheet name={drinkEdit.name} initial={drinkEdit.initial} onClose={() => setDrinkEdit(null)} onSave={saveDrink} /> : null}
+
       {/* Add it yourself: name + grams of carbohydrate in one serving (no guessing by the app) */}
       <Sheet visible={custom !== null} onClose={() => setCustom(null)} title="নিজে খাবার যোগ করুন">
-        <View style={styles.customBody}>
+        <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={[styles.customBody, { paddingBottom: 20 }]}>
+          <Button label="এটি পানীয়? ধরন ও চিনি বেছে নিন" sub="Drink options" icon="edit" onPress={() => {
+            if (!custom) return;
+            setDrinkEdit({ from: custom.from, name: custom.name });
+            setCustom(null);
+          }} />
           <Input
             label="খাবারের নাম"
             value={custom?.name ?? ''}
@@ -459,7 +500,7 @@ export default function ScanResultScreen() {
               <Text style={styles.customLinkText}>আমাদের তালিকায় আছে? তালিকা থেকে বেছে নিন</Text>
             </Pressable>
           ) : null}
-        </View>
+        </ScrollView>
       </Sheet>
     </View>
   );

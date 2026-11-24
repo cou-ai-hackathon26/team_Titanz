@@ -1,3 +1,4 @@
+import type { DrinkDetails } from './drinks.ts';
 // Roza-Safe food table. Copied from our build report (Part 1), with sources for every number.
 // All carbs = AVAILABLE carbohydrate (fibre excluded). GI scale: glucose = 100.
 // estimated = true means no measured value exists; the reasoning is in `src`.
@@ -8,6 +9,7 @@
 export type Unit = "piece" | "cup" | "bowl" | "glass" | "serving"; // serving = a food the user added themselves
 
 export type Food = {
+  drink?: DrinkDetails; // confirmed drink recipe, saved with custom foods
   id: string;
   nameBn: string;
   nameEn: string;

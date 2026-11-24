@@ -42,3 +42,6 @@ Read `CLAUDE.md` / `AGENTS.md`, then `docs/RULES.md`, then this file. `docs/PROG
 
 ## OpenAI-first scan routing (24 Nov)
 The default scan order is now OpenAI → Gemini (all configured keys) → Groq → Claude. OpenAI quota, network/timeout and configuration failures allow fallback. Explicit SCAN_PROVIDER overrides still select only one provider.
+
+## Drink portions
+New DrinkSheet on plate/manual/unknown-food entry: packaged drinks by ml and label carbohydrate or explicit cola estimate; homemade sugar 0–6 tablespoons per glass (confirmed by Nadim). Other ingredient carbs entered separately. Requires refreshed Expo Go or a new APK; no scan-server change. Tests: drinks.test.mts.

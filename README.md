@@ -14,7 +14,7 @@ Check your fasting risk, snap your iftar (or sehri) plate, and see what it will 
 | | Feature |
 |---|---|
 | 1 | **Risk check (IDF-DAR 2021):** an 8-question quiz (+ pregnancy for women) → Low / Moderate / High score with reasons. High → "see a doctor before fasting". Share a report for the doctor. |
-| 2 | **Plate scan (real AI):** camera or gallery → vision AI names the Bangladeshi foods and counts them → user fixes counts with − / +. Unsure foods are marked. No photo? **Add foods by hand.** |
+| 2 | **Plate scan (real AI):** camera or gallery → vision AI names the Bangladeshi foods and counts them → user fixes counts with − / +. Unsure foods are marked. No photo? **Add foods by hand.** Drinks: packaged volume + label carbs (or explicit cola estimate); homemade sugar in tablespoons per serving, plus other ingredient carbs. |
 | 3 | **Sugar forecast:** our own maths turns the plate into a 2-hour sugar curve with a safe zone, shown as a range (estimate). **What-ifs:** eat less of the biggest-sugar food, add chola, 15-minute walk — the curve changes instantly. |
 | 4 | **Sehri or iftar:** each plate is marked sehri or iftar, picked automatically by the time and the district's sehri time (user can switch). |
 | 5 | **Pre-iftar check + emergency steps:** symptom tiles → the 3 IDF-DAR steps, log a glucometer reading (below 3.9 or above 16.7 mmol/L → break the fast), call 16263, alert family (SMS, or opens Contacts if no number is saved). |
@@ -32,7 +32,7 @@ Photo ─▶ scan server (Vercel) ─▶ vision AI: food ids + counts (JSON, ids
       ─▶ 2-hour curve + what-ifs (lib/forecast.ts) ─▶ Bangla advice
 Risk quiz ─▶ IDF-DAR 2021 points (lib/dar.ts) ─▶ Low / Moderate / High
 ```
-The AI only **reads the plate**. Everything else — the food table, glycemic load, the sugar curve, the IDF-DAR score and the safety rules — is our own code with sources (`docs/LOGIC.md`), covered by 49 unit tests (`npm test`).
+The AI only **reads the plate**. Everything else — the food table, glycemic load, the sugar curve, the IDF-DAR score and the safety rules — is our own code with sources (`docs/LOGIC.md`), covered by 53 unit tests (`npm test`).
 
 **If the AI is busy or out of free quota:** the server tries **OpenAI first**, then **Gemini** (with backup keys), then **Groq** (free), then Claude (if a key is set). If all are out, the app says so in Bangla and the user adds foods by hand — the forecast still works.
 
@@ -61,7 +61,7 @@ Tested on **10 real Bangladeshi iftar photos: 8/10 plates fully correct** (every
 ```bash
 npm install
 npx expo start              # app in Expo Go
-npm test                    # 49 unit tests (no internet needed)
+npm test                    # 53 unit tests (no internet needed)
 cd api && npm run dev       # scan server on port 3001 (needs api/.env.local, see api/.env.example)
 npx eas build -p android --profile preview   # APK
 ```
