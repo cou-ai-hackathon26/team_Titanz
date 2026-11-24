@@ -3,24 +3,23 @@
 Read `CLAUDE.md` / `AGENTS.md`, then `docs/RULES.md`, then this file. `docs/PROGRESS.md` has the full log.
 
 ## State in one look
-- Last commit on GitHub: `b9b5ab8` (main). Public repo: github.com/nadim-titanz/roza-safe
+- Last commit on GitHub: `ed52c00` (main) — everything below is committed and pushed. Public repo: github.com/nadim-titanz/roza-safe
 - GitHub Release **v1.0** = the 23 Nov APK (older). Newer APKs are on Expo (team `titanz`, project `roza-safe`).
 - Scan server live: https://roza-safe-api.vercel.app/api/scan (Vercel project `roza-safe-api`, code in `api/`). Up to date with `main`.
 - Tests: `npm test` → **46 pass**. Type check: `npx tsc --noEmit` clean.
 - APK on Nadim's phone now: EAS build `dc9a8ec0` (has add-it-yourself + reminder fix, **not** food sizes). Food sizes are only in Expo Go until the next APK.
 
-## NOT committed yet (all tested in the web preview, 46 tests pass)
+## Latest work (committed in `a24f590` + `edfd39b`; tested in the web preview, 46 tests pass)
 1. **Add it yourself** — food the AI can't recognise (or not in our list): plate screen → "নিজে যোগ করুন" → name + grams of carbohydrate per serving. Counted as GI 70 (safe side). Saved on the phone so History still shows it.
    - `lib/customFood.ts` (new), `dev/tests/customFood.test.mts` (new), `lib/storage.ts` (loadCustomFoods / saveCustomFood; deleteAllData clears them), `app/_layout.tsx` (loads them before showing the app), `app/scan-result.tsx` (sheet + "+ তালিকায় নেই? নিজে লিখুন" as first option of the food list), `lib/foods.ts` (`serving` unit).
 2. **Reminders never crash** — `lib/reminders.ts`: skipped inside Expo Go (it can't create the Android channel); errors are caught and logged, never shown.
 3. **Food size** — each food on the plate has a pill "✎ ১ বাটি = ৩০ g" → sheet with ছোট (½) / নিয়মিত / বড় (1½) or exact g/ml. Count × size scales carbs, GL, fibre+protein.
    - `lib/meal.ts` (`size` on MealItem, `sizeScale`, `itemSize`, `itemCarbs`, `sizeChoices`), `dev/tests/meal.test.mts`, `app/scan-result.tsx`, `lib/storage.ts` (MealPlan items keep `size`), `app/(tabs)/forecast.tsx` (saves size), `app/plan/[date].tsx` (shows size, carbs per food).
 - **Do not commit `demo-video/`** (another session's work in progress, has node_modules).
-- To commit: `git add -A -- . ':!demo-video'` then small commits, e.g. `feat: add unrecognised food yourself (name + grams)`, `feat: food size per item`, `fix: reminders never crash in Expo Go`. End messages with the Co-Authored-By line if the tool requires it.
 
 ## Next steps (in order)
 1. Nadim tests food size + add-it-yourself on the phone (Expo Go over USB, see below).
-2. Commit + push the 3 items above (hackathon rule: commit at least once an hour today).
+2. Keep committing small changes (hackathon rule: at least once an hour today).
 3. Final APK: `npx eas-cli build -p android --profile preview --non-interactive --no-wait` (~15–20 min on the free plan). Install fast over USB: download the `.apk` from the build page, then `~/Library/Android/sdk/platform-tools/adb install -r file.apk`.
 4. New GitHub Release (e.g. v1.1) with that APK: `gh release create v1.1 roza-safe-v1.1.apk --title "Roza-Safe v1.1" --notes "..."`, then check README links (`/releases/latest`).
 5. README: add the demo video link when ready.
