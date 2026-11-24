@@ -87,14 +87,15 @@ test('Gemini errors become clear messages', async () => {
   assert.equal((await scanWithFakeGemini(200, { candidates: [{ content: { parts: [{ text: 'not json' }] }, finishReason: 'STOP' }] })).body.error, 'The AI answer was not valid JSON');
 });
 
-test('Gemini busy (503): retries, then succeeds or gives a clear busy message', async () => {
+test('Gemini busy (503): retries once, then succeeds or gives a clear busy message', async () => {
   const good = { candidates: [{ content: { parts: [{ text: '{"items":[{"id":"khejur","count":3,"confidence":0.9}],"unknown":[]}' }] }, finishReason: 'STOP' }] };
   const recovered = await scanWithFakeGemini([503, 200], good);
   assert.equal(recovered.status, 200);
   assert.equal(recovered.calls, 2);
-  const stillBusy = await scanWithFakeGemini([503, 503, 503], good);
+  assert.equal(recovered.sentBody.generationConfig.thinkingConfig.thinkingLevel, 'low'); // fast: no long thinking
+  const stillBusy = await scanWithFakeGemini([503, 503], good);
   assert.equal(stillBusy.status, 503);
-  assert.equal(stillBusy.calls, 3);
+  assert.equal(stillBusy.calls, 2); // 1 try + 1 retry, then give up quickly (backup AI or clear message)
   assert.match(stillBusy.body.error, /busy/);
 });
 

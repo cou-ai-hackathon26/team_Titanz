@@ -4,8 +4,8 @@
 import { ScanError, type AiAnswer } from './scanError.ts';
 
 const DEFAULT_MODEL = 'gemini-4-hydrogen'; // on the free tier, reads images (checked 22 Nov 2026)
-const MAX_TRIES = 3; // 1 try + 2 retries when Google says it is busy
-const RETRY_WAIT_MS = 1500; // wait 1.5 s, then 3 s
+const MAX_TRIES = 2; // 1 try + 1 retry when Google says it is busy (then the backup AI takes over)
+const RETRY_WAIT_MS = 1500; // wait 1.5 s before the retry
 
 // Waits for the given number of milliseconds.
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -57,7 +57,14 @@ export async function askGemini(key: string, imageBase64: string, systemPrompt: 
   const requestBody = JSON.stringify({
     systemInstruction: { parts: [{ text: systemPrompt }] },
     contents: [{ role: 'user', parts: [{ inlineData: { mimeType: 'image/jpeg', data: imageBase64 } }, { text: question }] }],
-    generationConfig: { responseMimeType: 'application/json', responseJsonSchema: forGemini(schema), maxOutputTokens: 8000 },
+    generationConfig: {
+      responseMimeType: 'application/json',
+      responseJsonSchema: forGemini(schema),
+      maxOutputTokens: 8000,
+      // Naming foods in a photo needs little reasoning. gemini-4-hydrogen thinks at "high" by default, which made
+      // scans take 15 s+ (and time out). "low" = fewest tokens, lowest latency (ai.google.dev thinking docs).
+      thinkingConfig: { thinkingLevel: process.env.SCAN_THINKING || 'low' },
+    },
   });
 
   // The free tier is sometimes busy (503) or has a short hiccup (500). Wait a moment and try again, up to 2 times.
@@ -69,7 +76,7 @@ export async function askGemini(key: string, imageBase64: string, systemPrompt: 
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'x-goog-api-key': key },
         body: requestBody,
-        signal: AbortSignal.timeout(15_000), // 3 tries x 15 s + waits (~50 s) leaves time for a backup, under the app's 90 s limit
+        signal: AbortSignal.timeout(20_000), // 2 tries x 20 s + wait (~42 s) leaves time for the Groq backup, under the app's 90 s limit
       });
     } catch {
       res = null; // network problem or timeout: try again

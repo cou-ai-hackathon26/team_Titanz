@@ -40,7 +40,7 @@ export async function askGroq(imageBase64: string, systemPrompt: string, schema:
       body: JSON.stringify({
         model,
         temperature: 0,
-        max_completion_tokens: 2000,
+        max_completion_tokens: 700, // our JSON answer is ~300 tokens; the free plan allows only 1,000 output tokens a minute
         response_format: { type: 'json_object' },
         messages: [
           { role: 'system', content: `${systemPrompt}\n\nAnswer with one JSON object only, matching this JSON schema:\n${JSON.stringify(schema)}` },
